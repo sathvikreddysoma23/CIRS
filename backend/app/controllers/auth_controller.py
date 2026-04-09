@@ -36,7 +36,7 @@ async def register_user(user_data: UserCreate) -> dict:
     new_user = {
         "name": user_data.name,
         "email": user_data.email,
-        "role": user_data.role,
+        "role": user_data.role.value if hasattr(user_data.role, 'value') else user_data.role,
         "department": user_data.department,
         "phone": user_data.phone,
         "is_active": True,
