@@ -1,19 +1,10 @@
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 from app.controllers import auth_controller
 from app.middleware.auth import get_current_active_user
-from fastapi import Depends
+from app.models.user import UserCreate
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-
-
-class RegisterRequest(BaseModel):
-    name: str
-    email: EmailStr
-    password: str
-    role: str = "student"
-    department: str = None
-    phone: str = None
 
 
 class LoginRequest(BaseModel):
@@ -32,7 +23,7 @@ class ProfileUpdate(BaseModel):
 
 
 @router.post("/register", summary="Register a new user")
-async def register(body: RegisterRequest):
+async def register(body: UserCreate):
     return await auth_controller.register_user(body)
 
 
