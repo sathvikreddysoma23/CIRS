@@ -58,39 +58,40 @@ if settings.FRONTEND_URL:
     if f"{url}/" not in origins:
         origins.append(f"{url}/")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"]
-)
+# ─── Nuclear CORS & Request Logging ──────────────────────────────────────────
+@app.middleware("http")
+async def nuclear_cors_middleware(request: Request, call_next):
+    # Handle preflight (OPTIONS)
+    if request.method == "OPTIONS":
+        origin = request.headers.get("Origin")
+        if origin in origins or "*" in origins: # or just allow all here for debug
+            response = Response(status_code=204)
+            response.headers["Access-Control-Allow-Origin"] = origin or "*"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, X-Requested-With"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Max-Age"] = "600"
+            return response
+        
+    # Process the request
+    try:
+        response = await call_next(request)
+    except Exception as e:
+        logger.error(f"Middleware caught error: {e}")
+        response = JSONResponse(
+            status_code=500,
+            content={"detail": "Internal Server Error (Middleware Caught)"}
+        )
 
+    # Inject headers into the response
+    origin = request.headers.get("Origin")
+    if origin in origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, X-Requested-With"
 
-# ─── Exception Handlers ──────────────────────────────────────────────────────
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"detail": exc.detail},
-    )
-
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    logger.error(f"Validation error: {exc.errors()}")
-    return JSONResponse(
-        status_code=422,
-        content={"detail": "Validation error", "errors": exc.errors()},
-    )
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": f"An unexpected server error occurred: {str(exc)}"},
-    )
+    return response
 
 
 # ─── Routers ─────────────────────────────────────────────────────────────────
