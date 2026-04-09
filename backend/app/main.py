@@ -1,8 +1,9 @@
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 
 from app.database import connect_db, close_db
 from app.config import settings
@@ -34,30 +35,62 @@ app = FastAPI(
         "transportation monitoring, housekeeping, healthcare, and AI-powered NLP classification."
     ),
     version="1.0.0",
-    contact={"name": "CIRS Team"},
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
 )
 
 
 # ─── CORS ────────────────────────────────────────────────────────────────────
+# Origins list with common variations
+origins = [
+    "https://cirs-ochre.vercel.app",
+    "https://cirs-ochre.vercel.app/",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5173",
+]
+
+# Add dynamic frontend URL from settings if not already present
+if settings.FRONTEND_URL:
+    url = settings.FRONTEND_URL.rstrip("/")
+    if url not in origins:
+        origins.append(url)
+    if f"{url}/" not in origins:
+        origins.append(f"{url}/")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        settings.FRONTEND_URL,
-        settings.FRONTEND_URL.rstrip("/"),
-        "https://cirs-ochre.vercel.app",
-        "https://cirs-ochre.vercel.app/",
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
+
+
+# ─── Exception Handlers ──────────────────────────────────────────────────────
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error(f"Validation error: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": "Validation error", "errors": exc.errors()},
+    )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"An unexpected server error occurred: {str(exc)}"},
+    )
 
 
 # ─── Routers ─────────────────────────────────────────────────────────────────
@@ -82,43 +115,9 @@ async def root():
 
 @app.get("/health", tags=["Health"])
 async def health_check():
-    return JSONResponse(content={"status": "ok"}, status_code=200)
+    return {"status": "ok", "environment": settings.APP_ENV}
 
 
-# ─── Common Browser Requests (Avoid 404s) ───────────────────────────────────
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     return Response(status_code=204)
-
-
-@app.get("/.well-known/appspecific/com.chrome.devtools.json", include_in_schema=False)
-async def chrome_devtools():
-    return Response(status_code=204)
-
-
-from fastapi.exceptions import RequestValidationError
-from fastapi import Request, HTTPException
-from fastapi.responses import JSONResponse as FR
-
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    return FR(
-        status_code=exc.status_code,
-        content={"detail": exc.detail},
-    )
-
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    logger.error(f"Validation error: {exc.errors()}")
-    return FR(
-        status_code=422,
-        content={"detail": "Validation error", "errors": exc.errors()},
-    )
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    return FR(
-        status_code=500,
-        content={"detail": f"An unexpected server error occurred: {str(exc)}"},
-    )
