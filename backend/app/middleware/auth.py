@@ -28,11 +28,6 @@ async def get_current_active_user(
     """Ensure the authenticated user still exists and is active."""
     db = get_db()
     user = await db["users"].find_one({"_id": ObjectId(current_user["sub"])})
-    
-    # DEBUG: Log user state to file
-    with open(r"c:\Users\anilv\OneDrive\Desktop(1)\CIRS_MINOR PROJECT\auth_debug.log", "a") as f:
-        f.write(f"Auth Trace: ID={current_user['sub']} | Found={'YES' if user else 'NO'} | Active={user.get('is_active') if user else 'N/A'}\n")
-    
     if not user or not user.get("is_active", True):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

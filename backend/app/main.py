@@ -1,6 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -81,15 +81,40 @@ async def health_check():
     return JSONResponse(content={"status": "ok"}, status_code=200)
 
 
-# ─── Global Exception Handler ────────────────────────────────────────────────
-from fastapi import Request
+# ─── Common Browser Requests (Avoid 404s) ───────────────────────────────────
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return Response(status_code=204)
+
+
+@app.get("/.well-known/appspecific/com.chrome.devtools.json", include_in_schema=False)
+async def chrome_devtools():
+    return Response(status_code=204)
+
+
+from fastapi.exceptions import RequestValidationError
+from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse as FR
 
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return FR(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error(f"Validation error: {exc.errors()}")
+    return FR(
+        status_code=422,
+        content={"detail": "Validation error", "errors": exc.errors()},
+    )
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return FR(
         status_code=500,
-        content={"detail": "An unexpected server error occurred."},
+        content={"detail": f"An unexpected server error occurred: {str(exc)}"},
     )

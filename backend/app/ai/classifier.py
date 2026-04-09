@@ -44,6 +44,7 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "doctor", "nurse", "clinic", "medicine", "sick", "health", "fever", "pain",
         "hospital", "ambulance", "first aid", "injury", "emergency", "pharmacy", "drug",
     ],
+    "other": [],
 }
 
 PRIORITY_KEYWORDS: dict[str, list[str]] = {
@@ -92,9 +93,11 @@ def rule_based_classify(title: str, description: str) -> dict:
             break
 
     # Rough confidence
-    max_score = category_scores[best_category]
-    total_keywords = sum(len(v) for v in CATEGORY_KEYWORDS.values())
+    max_score = category_scores.get(best_category, 0)
     confidence = round(min(max_score / 3, 1.0), 2)  # cap at 1.0
+
+    if best_category == "other":
+        confidence = 0.0
 
     return {
         "category": best_category,
