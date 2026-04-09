@@ -61,35 +61,32 @@ if settings.FRONTEND_URL:
 # ─── Nuclear CORS & Request Logging ──────────────────────────────────────────
 @app.middleware("http")
 async def nuclear_cors_middleware(request: Request, call_next):
+    origin = request.headers.get("Origin") or "*"
+    
     # Handle preflight (OPTIONS)
     if request.method == "OPTIONS":
-        origin = request.headers.get("Origin")
-        if origin in origins or "*" in origins: # or just allow all here for debug
-            response = Response(status_code=204)
-            response.headers["Access-Control-Allow-Origin"] = origin or "*"
-            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, X-Requested-With"
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Access-Control-Max-Age"] = "600"
-            return response
+        response = Response(status_code=204)
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, X-Requested-With"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
         
     # Process the request
     try:
         response = await call_next(request)
     except Exception as e:
-        logger.error(f"Middleware caught error: {e}", exc_info=True)
-        return JSONResponse(
+        logger.error(f"NUCLEAR CORS Caught Error: {e}", exc_info=True)
+        response = JSONResponse(
             status_code=500,
-            content={"detail": f"Internal Server Error (Middleware): {str(e)}"}
+            content={"detail": f"Backend Error: {str(e)}"}
         )
 
-    # Inject headers into the response
-    origin = request.headers.get("Origin")
-    if origin in origins:
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, X-Requested-With"
+    # ALWAYS inject headers into the final response
+    response.headers["Access-Control-Allow-Origin"] = origin
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, X-Requested-With"
 
     return response
 
