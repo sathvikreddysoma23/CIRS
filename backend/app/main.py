@@ -46,6 +46,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         settings.FRONTEND_URL,
+        "https://cirs-ochre.vercel.app",
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:5174",
