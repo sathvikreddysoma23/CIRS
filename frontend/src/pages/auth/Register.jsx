@@ -9,7 +9,8 @@ const Register = () => {
     email: '',
     password: '',
     role: 'student',
-    department: 'Engineering'
+    department: 'Engineering',
+    secret_key: ''
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -26,7 +27,7 @@ const Register = () => {
       else if (user.role === 'department') navigate('/staff')
       else navigate('/student')
     } catch (err) {
-      setError('Registration failed. Please try again.')
+      setError(err.response?.data?.detail || 'Registration failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -107,7 +108,7 @@ const Register = () => {
           <div style={{ marginBottom: '1.25rem' }}>
             <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Role</label>
             <div style={{ display: 'flex', gap: '1rem' }}>
-              {['student', 'department'].map((r) => (
+              {['student', 'department', 'admin'].map((r) => (
                 <button
                   key={r}
                   type="button"
@@ -131,23 +132,42 @@ const Register = () => {
             </div>
           </div>
 
-          <div style={{ marginBottom: '1.25rem' }}>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Department</label>
-            <div style={{ position: 'relative' }}>
-              <select
-                style={{ width: '100%', paddingLeft: '2.5rem', appearance: 'none' }}
-                value={formData.department}
-                onChange={(e) => setFormData({...formData, department: e.target.value})}
-              >
-                <option value="Engineering">Engineering</option>
-                <option value="Hostel">Hostel Management</option>
-                <option value="IT Services">IT Services</option>
-                <option value="Library">Library</option>
-                <option value="Security">Security</option>
-              </select>
-              <Building2 size={18} color="var(--text-light)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
+          {formData.role !== 'student' && (
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Department</label>
+              <div style={{ position: 'relative' }}>
+                <select
+                  style={{ width: '100%', paddingLeft: '2.5rem', appearance: 'none' }}
+                  value={formData.department}
+                  onChange={(e) => setFormData({...formData, department: e.target.value})}
+                >
+                  <option value="Engineering">Engineering</option>
+                  <option value="Hostel">Hostel Management</option>
+                  <option value="IT Services">IT Services</option>
+                  <option value="Library">Library</option>
+                  <option value="Security">Security</option>
+                </select>
+                <Building2 size={18} color="var(--text-light)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
+              </div>
             </div>
-          </div>
+          )}
+
+          {formData.role !== 'student' && (
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Secret Key</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="password"
+                  placeholder="Enter role security key"
+                  required
+                  value={formData.secret_key}
+                  onChange={(e) => setFormData({...formData, secret_key: e.target.value})}
+                  style={{ width: '100%', paddingLeft: '2.5rem' }}
+                />
+                <ShieldPlus size={18} color="var(--text-light)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
+              </div>
+            </div>
+          )}
 
           <div style={{ marginBottom: '2.5rem' }}>
             <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Password</label>

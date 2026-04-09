@@ -18,6 +18,14 @@ async def register_user(user_data: UserCreate) -> dict:
             detail="A user with this email already exists.",
         )
 
+    # Secret Key Validation
+    if user_data.role == "admin":
+        if user_data.secret_key != "admin@123":
+            raise HTTPException(status_code=403, detail="Invalid secret key for admin registration.")
+    elif user_data.role == "department":
+        if user_data.secret_key != "staf@123":
+            raise HTTPException(status_code=403, detail="Invalid secret key for staff registration.")
+
     hashed = hash_password(user_data.password)
     new_user = {
         "name": user_data.name,

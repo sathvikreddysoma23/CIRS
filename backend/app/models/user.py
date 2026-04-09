@@ -37,6 +37,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6)
+    secret_key: Optional[str] = None
 
 
 class UserUpdate(BaseModel):

@@ -292,7 +292,7 @@ const RaiseIssue = () => {
               <div style={{ color: '#2563EB' }}><Shield size={24} /></div>
               <div>
                 <h4 style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1E3A8A', marginBottom: '0.5rem' }}>Verified Communication</h4>
-                <p style={{ fontSize: '0.8125rem', color: '#60A5FA', lineHeight: 1.5, color: '#1E40AF' }}>
+                <p style={{ fontSize: '0.8125rem', lineHeight: 1.5, color: '#1E40AF' }}>
                   Your submission is encrypted and transmitted directly to institutional handlers for rapid triage.
                 </p>
               </div>
