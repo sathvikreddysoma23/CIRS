@@ -1,6 +1,10 @@
 from passlib.context import CryptContext
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["bcrypt"], 
+    deprecated="auto",
+    bcrypt__truncate_error=False  # Tell passlib to truncate instead of crashing
+)
 
 
 def hash_password(plain_password: str) -> str:
