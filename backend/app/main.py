@@ -76,10 +76,10 @@ async def nuclear_cors_middleware(request: Request, call_next):
     try:
         response = await call_next(request)
     except Exception as e:
-        logger.error(f"NUCLEAR FIX V3 Caught Error: {e}", exc_info=True)
+        logger.error(f"Middleware Error: {e}", exc_info=True)
         response = JSONResponse(
             status_code=500,
-            content={"detail": f"NUCLEAR FIX V3 Error: {str(e)}"}
+            content={"detail": "An unexpected server error occurred."}
         )
 
     # ALWAYS inject headers into the final response
