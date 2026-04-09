@@ -24,7 +24,7 @@ async def register_user(user_data: UserCreate) -> dict:
             raise HTTPException(status_code=403, detail="Invalid secret key for admin registration.")
         user_data.department = None
     elif user_data.role == "department":
-        if user_data.secret_key != "staff123":
+        if user_data.secret_key != "staf123":
             raise HTTPException(status_code=403, detail="Invalid secret key for staff registration.")
 
     hashed = hash_password(user_data.password)
