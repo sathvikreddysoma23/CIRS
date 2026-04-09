@@ -41,15 +41,23 @@ const Register = () => {
       await register(submissionData)
       navigate('/login?msg=registered')
     } catch (err) {
-      console.error('Registration error detail:', err.response?.data)
-      const detail = err.response?.data?.detail
-      const errors = err.response?.data?.errors
+      console.error('Registration Full Error:', err);
+      console.error('Registration Response Data:', err.response?.data)
       
-      if (Array.isArray(errors)) {
-        setError(errors.map(e => `${e.loc[e.loc.length-1]}: ${e.msg}`).join(', '))
-      } else {
-        setError(detail || 'Registration failed. Please check your inputs.')
+      const responseData = err.response?.data;
+      let errorMessage = 'Registration failed. Please check your inputs.';
+
+      if (typeof responseData === 'string') {
+        errorMessage = responseData;
+      } else if (responseData?.detail) {
+        errorMessage = typeof responseData.detail === 'string' 
+          ? responseData.detail 
+          : JSON.stringify(responseData.detail);
+      } else if (Array.isArray(responseData?.errors)) {
+        errorMessage = responseData.errors.map(e => `${e.loc[e.loc.length-1]}: ${e.msg}`).join(', ');
       }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false)
     }
