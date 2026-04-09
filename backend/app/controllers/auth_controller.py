@@ -7,10 +7,15 @@ from bson import ObjectId
 from datetime import datetime
 
 
-async def register_user(user_data: UserCreate) -> dict:
-    db = get_db()
+import logging
+logger = logging.getLogger(__name__)
 
+async def register_user(user_data: UserCreate) -> dict:
+    logger.info(f"Registering user: {user_data.email}")
+    db = get_db()
+    
     # Check duplicate email
+    logger.info("Checking for existing email...")
     existing = await db["users"].find_one({"email": user_data.email})
     if existing:
         raise HTTPException(
