@@ -77,10 +77,10 @@ async def nuclear_cors_middleware(request: Request, call_next):
     try:
         response = await call_next(request)
     except Exception as e:
-        logger.error(f"Middleware caught error: {e}")
-        response = JSONResponse(
+        logger.error(f"Middleware caught error: {e}", exc_info=True)
+        return JSONResponse(
             status_code=500,
-            content={"detail": "Internal Server Error (Middleware Caught)"}
+            content={"detail": f"Internal Server Error (Middleware): {str(e)}"}
         )
 
     # Inject headers into the response
@@ -115,7 +115,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": f"An unexpected server error occurred: {str(exc)}"},
+        content={"detail": f"Server Error: {str(exc)}"},
     )
 
 
