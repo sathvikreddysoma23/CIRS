@@ -22,7 +22,16 @@ const Register = () => {
     setError('')
     setLoading(true)
     try {
-      const user = await register(formData)
+      // Clean up data based on role
+      const submissionData = { ...formData }
+      if (submissionData.role !== 'department') {
+        submissionData.department = null
+      }
+      if (submissionData.role === 'student') {
+        submissionData.secret_key = null
+      }
+
+      const user = await register(submissionData)
       if (user.role === 'admin') navigate('/admin')
       else if (user.role === 'department') navigate('/staff')
       else navigate('/student')
@@ -132,7 +141,7 @@ const Register = () => {
             </div>
           </div>
 
-          {formData.role !== 'student' && (
+          {formData.role === 'department' && (
             <div style={{ marginBottom: '1.25rem' }}>
               <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Department</label>
               <div style={{ position: 'relative' }}>
