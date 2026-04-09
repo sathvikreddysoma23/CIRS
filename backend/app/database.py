@@ -32,4 +32,8 @@ async def close_db():
 
 def get_db():
     """Return the active database instance."""
+    if db is None:
+        logger.error("Database connection missing when trying to get_db()")
+        from fastapi import HTTPException
+        raise HTTPException(status_code=503, detail="Database connection not established")
     return db
