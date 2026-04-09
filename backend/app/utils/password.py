@@ -8,8 +8,12 @@ pwd_context = CryptContext(
 
 
 def hash_password(plain_password: str) -> str:
-    """Hash a plain-text password using bcrypt. Truncate to 72 characters (bcrypt limit)."""
-    return pwd_context.hash(plain_password[:72])
+    """Hash a plain-text password using bcrypt. Truncate to 72 characters."""
+    try:
+        truncated = plain_password[:72]
+        return pwd_context.hash(truncated)
+    except Exception as e:
+        raise Exception(f"Bcrypt Error (len={len(plain_password)}): {str(e)}")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
