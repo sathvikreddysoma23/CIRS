@@ -26,6 +26,7 @@ const Sidebar = () => {
         return [
           { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/admin' },
           { name: 'User Directory', icon: <Users size={20} />, path: '/admin/users' },
+          { name: 'Fleet Status', icon: <ClipboardList size={20} />, path: '/admin' },
           { name: 'Departments', icon: <Building2 size={20} />, path: '/admin/departments' },
           { name: 'All Issues', icon: <ClipboardList size={20} />, path: '/admin/issues' },
         ]

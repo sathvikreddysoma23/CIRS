@@ -15,7 +15,10 @@ import {
   X,
   PieChart as PieIcon,
   Layers,
-  Calendar
+  Calendar,
+  Bus,
+  ShieldAlert,
+  Search
 } from 'lucide-react'
 import {
   BarChart as RBarChart,
@@ -35,7 +38,7 @@ import {
 } from 'recharts'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { adminService, complaintService } from '../../services/api'
+import { adminService, complaintService, operationsService } from '../../services/api'
 
 const AdminDashboard = () => {
   const { user } = useAuth()
@@ -45,6 +48,8 @@ const AdminDashboard = () => {
   const [filterType, setFilterType] = useState('all') // all, pending, resolved, unsolved
   const [showFilters, setShowFilters] = useState(false)
   const [showAnalytics, setShowAnalytics] = useState(false)
+  const [busReports, setBusReports] = useState([])
+  const [busStatData, setBusStatData] = useState({ good: 0, bad: 0, total: 0 })
 
   const fetchAdminData = async () => {
     setLoading(true)
@@ -56,6 +61,20 @@ const AdminDashboard = () => {
 
       setStats(overviewRes.data)
       setRecentIssues(complaintsRes.data.complaints)
+
+      // Fetch bus reports independently
+      try {
+        const busReportsRes = await operationsService.getBusReports()
+        const reports = Array.isArray(busReportsRes.data) ? busReportsRes.data : []
+        setBusReports(reports)
+        
+        const total = reports.length
+        const bad = reports.filter(r => r.condition === 'bad').length
+        setBusStatData({ total, bad, good: total - bad })
+      } catch (busErr) {
+        console.error('Failed to load bus reports:', busErr)
+        setBusReports([])
+      }
     } catch (err) {
       console.error('Failed to load admin dashboard:', err)
     } finally {
@@ -134,6 +153,7 @@ const AdminDashboard = () => {
     { id: 'total', label: 'System Issues', value: filteredStats.complaints.total, icon: <Activity size={24} />, color: 'var(--primary)', bg: 'rgba(30, 58, 138, 0.05)', showAlways: true },
     { id: 'resolved', label: 'Total Resolved', value: filteredStats.complaints.resolved, icon: <CheckCircle size={24} />, color: 'var(--accent)', bg: 'rgba(16, 185, 129, 0.05)', showAlways: true },
     { id: 'pending', label: 'Unresolved Tasks', value: filteredStats.complaints.pending || (stats.complaints.pending + stats.complaints.in_progress), icon: <Clock size={24} />, color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.05)', showAlways: true },
+    { id: 'buses', label: 'Bus Alerts', value: busStatData.bad, icon: <Bus size={24} />, color: '#EF4444', bg: 'rgba(239, 68, 68, 0.05)', showAlways: true },
     { id: 'users', label: 'System Users', value: stats.users.total, icon: <Users size={24} />, color: 'var(--secondary)', bg: 'rgba(59, 130, 246, 0.05)', showAlways: false },
   ]
 
@@ -357,6 +377,92 @@ const AdminDashboard = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* NEW BUS CONDITION MONITORING SECTION */}
+      <div className="card animate-in slide-in-from-bottom duration-700" style={{ marginTop: '2.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ width: 44, height: 44, borderRadius: '12px', background: 'rgba(37, 99, 235, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Bus size={24} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Fleet Condition Monitoring</h3>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-light)', margin: 0 }}>Live reports from university bus drivers</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '1.5rem' }}>
+             <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-light)', display: 'block', textTransform: 'uppercase' }}>Fleet Status</span>
+                <span style={{ fontSize: '0.875rem', fontWeight: 800, color: busStatData.bad > 0 ? '#EF4444' : '#10B981' }}>
+                  {busStatData.bad > 0 ? `${busStatData.bad} Vehicles Need Attention` : 'All Systems Operational'}
+                </span>
+             </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+          {busReports.slice(0, 4).map((report, idx) => (
+            <div key={idx} style={{ 
+              padding: '1.5rem', 
+              borderRadius: '16px', 
+              border: `1.5px solid ${report.condition === 'bad' ? '#FCA5A5' : '#E2E8F0'}`,
+              background: report.condition === 'bad' ? '#FFF5F5' : 'white',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              {report.condition === 'bad' && (
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#EF4444' }}></div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                <div>
+                   <span style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vehicle Number</span>
+                   <h4 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--primary)', margin: '2px 0 0 0' }}>{report.bus_number}</h4>
+                </div>
+                <div style={{ 
+                  padding: '0.35rem 0.75rem', 
+                  borderRadius: '30px', 
+                  fontSize: '0.75rem', 
+                  fontWeight: 800,
+                  background: report.condition === 'bad' ? '#EF4444' : '#10B981',
+                  color: 'white'
+                }}>
+                  {report.condition.toUpperCase()}
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '1.25rem' }}>
+                <p style={{ fontSize: '0.875rem', color: '#475569', margin: 0, fontStyle: 'italic' }}>
+                  "{report.issue_description || 'No issues reported.'}"
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                       <Users size={12} color="#64748b" />
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Driver ID: {report.driver_id.substring(0, 8)}</span>
+                 </div>
+                 <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600 }}>
+                    {new Date(report.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                 </span>
+              </div>
+            </div>
+          ))}
+          {busReports.length === 0 && (
+            <div style={{ gridColumn: '1 / -1', padding: '3rem', textAlign: 'center', color: 'var(--text-light)', border: '2px dashed var(--border)', borderRadius: '20px' }}>
+              <Bus size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+              <p style={{ fontWeight: 600 }}>No bus condition reports received yet.</p>
+            </div>
+          )}
+        </div>
+        
+        {busReports.length > 4 && (
+          <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+             <button className="btn btn-secondary" style={{ padding: '0.5rem 2rem', fontSize: '0.8125rem' }}>View All Fleet Reports</button>
+          </div>
+        )}
       </div>
 
       {/* Full Analytics Modal-like Overlay */}

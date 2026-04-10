@@ -71,5 +71,10 @@ export const notificationService = {
   delete: (id) => API.delete(`/notifications/${id}`),
 }
 
+export const operationsService = {
+  getBuses: (status) => API.get('/operations/buses', { params: { status } }),
+  getBusReports: (bus_number) => API.get('/operations/buses/reports', { params: { bus_number } }),
+}
+
 export default API
 
