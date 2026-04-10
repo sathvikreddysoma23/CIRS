@@ -204,7 +204,7 @@ const Profile = () => {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
               <div>
                 <label>Institutional Role</label>
                 <div style={{ position: 'relative' }}>
@@ -223,7 +223,6 @@ const Profile = () => {
                   <Shield size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
                 </div>
               </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
               <div>
                 <label>Phone Number</label>
                 <div style={{ position: 'relative' }}>
@@ -243,27 +242,28 @@ const Profile = () => {
                   <Settings size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
                 </div>
               </div>
-              {formData.role === 'department' && (
-                <div>
-                  <label>Department</label>
-                  <div style={{ position: 'relative' }}>
-                    <input 
-                      type="text" 
-                      disabled={!isEditing}
-                      style={{ 
-                        paddingLeft: '3rem', 
-                        backgroundColor: !isEditing ? '#F3F4F6' : 'white',
-                        cursor: !isEditing ? 'not-allowed' : 'text',
-                        color: !isEditing ? '#6B7280' : '#111827'
-                      }}
-                      value={formData.department}
-                      onChange={(e) => setFormData({...formData, department: e.target.value})}
-                    />
-                    <Building2 size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-                  </div>
-                </div>
-              )}
             </div>
+
+            {formData.role === 'department' && (
+              <div style={{ marginBottom: '2rem' }}>
+                <label>Department</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="text" 
+                    disabled={!isEditing}
+                    style={{ 
+                      paddingLeft: '3rem', 
+                      backgroundColor: !isEditing ? '#F3F4F6' : 'white',
+                      cursor: !isEditing ? 'not-allowed' : 'text',
+                      color: !isEditing ? '#6B7280' : '#111827'
+                    }}
+                    value={formData.department}
+                    onChange={(e) => setFormData({...formData, department: e.target.value})}
+                  />
+                  <Building2 size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                </div>
+              </div>
+            )}
 
             {isEditing && (
               <button 
