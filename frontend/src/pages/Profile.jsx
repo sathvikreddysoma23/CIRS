@@ -80,7 +80,7 @@ const Profile = () => {
     <div className="animate-in fade-in duration-500 max-w-5xl mx-auto">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
-          <h1 className="title" style={{ margin:0 }}>User Profile (Updated)</h1>
+          <h1 className="title" style={{ margin:0 }}>User Profile</h1>
           <p style={{ color: 'var(--text-light)' }}>Manage your personal account settings and security.</p>
         </div>
         <button onClick={() => setIsEditing(!isEditing)} className="btn btn-secondary">
