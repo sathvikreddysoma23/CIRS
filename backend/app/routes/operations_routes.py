@@ -164,3 +164,8 @@ async def submit_bus_report(body: BusReportCreate, current_user: dict = Depends(
 @router.get("/buses/reports", summary="Get all bus reports")
 async def list_bus_reports(bus_number: Optional[str] = Query(None), _=Depends(get_current_active_user)):
     return await ops.get_bus_reports(bus_number)
+
+
+@router.delete("/buses/reports/{report_id}", summary="Delete a bus report")
+async def delete_bus_report(report_id: str, _=Depends(require_admin_or_department)):
+    return await ops.delete_bus_report(report_id)

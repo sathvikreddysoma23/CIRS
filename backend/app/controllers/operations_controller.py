@@ -300,3 +300,10 @@ async def get_bus_reports(bus_number: Optional[str] = None) -> list:
     except Exception as e:
         print(f"Error fetching bus reports: {e}")
         return []
+
+async def delete_bus_report(report_id: str) -> dict:
+    db = get_db()
+    result = await db["bus_reports"].delete_one({"_id": ObjectId(report_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Report not found.")
+    return {"message": "Bus report deleted successfully."}

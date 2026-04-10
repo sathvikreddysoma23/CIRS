@@ -20,6 +20,7 @@ import {
   ShieldAlert,
   Search,
   UserCircle,
+  Trash2,
   RotateCcw
 } from 'lucide-react'
 import {
@@ -496,10 +497,24 @@ const AdminDashboard = () => {
                         </div>
                         <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>{report.driver_name || `ID: ${report.driver_id.substring(0, 8)}`}</span>
                      </div>
-                 <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600 }}>
-                    {new Date(report.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                 </span>
-              </div>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if(window.confirm('Delete this report?')) {
+                              operationsService.deleteBusReport(report._id).then(() => fetchAdminData());
+                            }
+                          }}
+                          style={{ border: 'none', background: 'none', color: '#94A3B8', cursor: 'pointer', padding: '0.25rem' }}
+                          title="Delete Report"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                        <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600 }}>
+                           {new Date(report.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                     </div>
+                  </div>
             </div>
           ))}
           {busReports.length === 0 && (
@@ -754,9 +769,24 @@ const BusReportsSlide = ({ reports, stats, onClose }) => {
                 </div>
               </div>
 
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#475569', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <AlertCircle size={16} /> Technical Observations
-              </h4>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#475569', margin:0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <AlertCircle size={16} /> Technical Observations
+                </h4>
+                <button 
+                  onClick={() => {
+                    if(window.confirm('Delete this report permanently?')) {
+                      operationsService.deleteBusReport(report._id).then(() => {
+                        fetchAdminData();
+                      });
+                    }
+                  }}
+                  className="btn"
+                  style={{ padding: '0.4rem 0.75rem', fontSize: '0.7rem', color: 'var(--error)', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}
+                >
+                  <Trash2 size={14} /> Delete Report
+                </button>
+              </div>
               <p style={{ fontSize: '1rem', color: '#334155', fontWeight: 500, lineHeight: 1.6, marginBottom: '1.25rem', background: '#F1F5F9', padding: '1.25rem', borderRadius: '12px' }}>
                 {report.issue_description || 'No detailed issues reported.'}
               </p>
