@@ -29,7 +29,7 @@ const Sidebar = () => {
           { name: 'User Directory', icon: <Users size={20} />, path: '/admin/users' },
           { name: 'Departments', icon: <Building2 size={20} />, path: '/admin/departments' },
           { name: 'All Issues', icon: <ClipboardList size={20} />, path: '/admin/issues' },
-          { name: 'Fleet Status', icon: <Bus size={20} />, path: '/admin' },
+          { name: 'Bus Report', icon: <Bus size={20} />, path: '/admin?view=bus-reports' },
         ]
       case 'department':
         return [

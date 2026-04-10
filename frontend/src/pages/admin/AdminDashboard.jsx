@@ -36,18 +36,20 @@ import {
   AreaChart,
   Area
 } from 'recharts'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { adminService, complaintService, operationsService } from '../../services/api'
 
 const AdminDashboard = () => {
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [stats, setStats] = useState(null)
   const [recentIssues, setRecentIssues] = useState([])
   const [loading, setLoading] = useState(true)
   const [filterType, setFilterType] = useState('all') // all, pending, resolved, unsolved
   const [showFilters, setShowFilters] = useState(false)
   const [showAnalytics, setShowAnalytics] = useState(false)
+  const [showBusReports, setShowBusReports] = useState(false)
   const [busReports, setBusReports] = useState([])
   const [busStatData, setBusStatData] = useState({ good: 0, bad: 0, total: 0 })
 
@@ -85,6 +87,18 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchAdminData()
   }, [])
+
+  useEffect(() => {
+    const view = searchParams.get('view')
+    if (view === 'bus-reports') {
+      setShowBusReports(true)
+    }
+  }, [searchParams])
+
+  const closeBusReports = () => {
+    setShowBusReports(false)
+    setSearchParams({})
+  }
 
   if (loading || !stats) {
     return (
@@ -590,6 +604,119 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Bus Reports Slide-out Overlay */}
+      {showBusReports && (
+        <BusReportsSlide 
+          reports={busReports} 
+          stats={busStatData} 
+          onClose={closeBusReports} 
+        />
+      )}
+    </div>
+  )
+}
+
+const BusReportsSlide = ({ reports, stats, onClose }) => {
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(10px)',
+      zIndex: 2000, display: 'flex', justifyContent: 'flex-end',
+      animation: 'fade-in 0.3s ease'
+    }}>
+      <div className="animate-slide-in-right" style={{
+        width: '100%', maxWidth: '900px', height: '100%',
+        background: 'var(--background)', padding: '2.5rem',
+        overflowY: 'auto', borderLeft: '1px solid var(--border)',
+        boxShadow: '-10px 0 50px rgba(0,0,0,0.2)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ width: 56, height: 56, background: 'rgba(37, 99, 235, 0.1)', color: 'var(--primary)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Bus size={32} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.75rem', fontWeight: 900, margin: 0 }}>Terminal Bus Monitoring</h2>
+              <p style={{ color: 'var(--text-light)', margin: 0 }}>Comprehensive condition overview & safety logs</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose}
+            style={{ width: 44, height: 44, borderRadius: '50%', background: '#F1F5F9', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
+          <div className="card" style={{ background: 'white', border: '1.5px solid #E2E8F0', padding: '1.5rem' }}>
+             <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Active Fleet</p>
+             <h3 style={{ fontSize: '2rem', fontWeight: 900 }}>{stats.total}</h3>
+          </div>
+          <div className="card" style={{ background: '#F0FDF4', border: '1.5px solid #BBF7D0', padding: '1.5rem' }}>
+             <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Operational</p>
+             <h3 style={{ fontSize: '2rem', fontWeight: 900, color: '#166534' }}>{stats.good}</h3>
+          </div>
+          <div className="card" style={{ background: '#FEF2F2', border: '1.5px solid #FECACA', padding: '1.5rem' }}>
+             <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#991B1B', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Alerts</p>
+             <h3 style={{ fontSize: '2rem', fontWeight: 900, color: '#DC2626' }}>{stats.bad}</h3>
+          </div>
+        </div>
+
+        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+           <Calendar size={20} color="var(--primary)" /> Recent Logs
+        </h3>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {reports.map((report, idx) => (
+            <div key={idx} className="card hover-lift" style={{ 
+              padding: '1.75rem', 
+              background: report.condition === 'bad' ? 'linear-gradient(to right, #FFF5F5, white)' : 'white',
+              border: '1.5px solid var(--border)' 
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                   <div style={{ padding: '0.5rem 1rem', background: '#F1F5F9', borderRadius: '10px', fontSize: '0.875rem', fontWeight: 800 }}>
+                      BUS: {report.bus_number}
+                   </div>
+                   <div style={{ 
+                      padding: '0.4rem 1rem', borderRadius: '30px', fontSize: '0.75rem', fontWeight: 800,
+                      background: report.condition === 'bad' ? '#EF4444' : '#10B981', color: 'white'
+                   }}>
+                      {report.condition.toUpperCase()}
+                   </div>
+                </div>
+                <span style={{ fontSize: '0.875rem', color: '#94A3B8', fontWeight: 600 }}>
+                  {new Date(report.created_at).toLocaleString()}
+                </span>
+              </div>
+              <p style={{ fontSize: '1rem', color: '#334155', fontWeight: 500, lineHeight: 1.6, marginBottom: '1.25rem' }}>
+                {report.issue_description || 'No issues reported.'}
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                 <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <UserCircle size={16} color="#475569" />
+                 </div>
+                 <span style={{ fontSize: '0.875rem', color: '#64748B', fontWeight: 600 }}>Submitted by Driver #{report.driver_id.substring(0, 8)}</span>
+              </div>
+            </div>
+          ))}
+          {reports.length === 0 && (
+            <div style={{ padding: '4rem', textAlign: 'center' }}>
+              <Bus size={64} style={{ opacity: 0.1, marginBottom: '1rem' }} />
+              <p style={{ color: 'var(--text-light)', fontWeight: 600 }}>No reports available for the current period.</p>
+            </div>
+          )}
+        </div>
+      </div>
+      <style>{`
+        @keyframes slide-in-right {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        .animate-slide-in-right { animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+      `}</style>
     </div>
   )
 }
