@@ -212,8 +212,41 @@ async def delete_medicine(medicine_id: str) -> dict:
 async def submit_bus_report(data: dict) -> dict:
     db = get_db()
     data["created_at"] = datetime.utcnow()
+    
+    # 1. Insert report into history
     result = await db["bus_reports"].insert_one(data)
     data["_id"] = str(result.inserted_id)
+    
+    # 2. Update the bus status in the 'buses' collection
+    status = "active" if data.get("condition") == "good" else "maintenance"
+    await db["buses"].update_one(
+        {"bus_number": data.get("bus_number")},
+        {"$set": {"status": status, "updated_at": datetime.utcnow()}}
+    )
+
+    # 3. If condition is 'bad', auto-create a system complaint for the admin
+    if data.get("condition") == "bad":
+        # Fetch driver details for the complaint
+        driver_id = data.get("driver_id")
+        driver = await db["users"].find_one({"_id": ObjectId(driver_id)})
+        
+        new_complaint = {
+            "title": f"BUS MAINTENANCE: {data.get('bus_number')}",
+            "description": f"DRIVER REPORT: {data.get('issue_description')}\nReport ID: {data['_id']}",
+            "location": f"Bus {data.get('bus_number')}",
+            "category": "transportation",
+            "priority": "high",
+            "student_id": driver_id,
+            "student_name": driver.get("name") if driver else "Driver",
+            "status": "pending",
+            "image_urls": [],
+            "status_history": [],
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+            "is_auto_generated": True
+        }
+        await db["complaints"].insert_one(new_complaint)
+    
     return data
 
 
@@ -222,5 +255,37 @@ async def get_bus_reports(bus_number: Optional[str] = None) -> list:
     query = {}
     if bus_number:
         query["bus_number"] = bus_number
-    cursor = db["bus_reports"].find(query).sort("created_at", -1)
+    
+    # We want to join with users to get the driver names
+    pipeline = [
+        {"$match": query},
+        {"$sort": {"created_at": -1}},
+        {
+            "$addFields": {
+                "driver_object_id": {"$toObjectId": "$driver_id"}
+            }
+        },
+        {
+            "$lookup": {
+                "from": "users",
+                "localField": "driver_object_id",
+                "foreignField": "_id",
+                "as": "driver_info"
+            }
+        },
+        {
+            "$unwind": {
+                "path": "$driver_info",
+                "preserveNullAndEmptyArrays": True
+            }
+        },
+        {
+            "$addFields": {
+                "driver_name": "$driver_info.name"
+            }
+        },
+        {"$project": {"driver_info": 0, "driver_object_id": 0}}
+    ]
+    
+    cursor = db["bus_reports"].aggregate(pipeline)
     return [_s(doc) async for doc in cursor]

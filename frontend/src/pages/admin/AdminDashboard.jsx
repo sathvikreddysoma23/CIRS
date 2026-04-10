@@ -18,7 +18,8 @@ import {
   Calendar,
   Bus,
   ShieldAlert,
-  Search
+  Search,
+  UserCircle
 } from 'lucide-react'
 import {
   BarChart as RBarChart,
@@ -474,7 +475,13 @@ const AdminDashboard = () => {
         
         {busReports.length > 4 && (
           <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-             <button className="btn btn-secondary" style={{ padding: '0.5rem 2rem', fontSize: '0.8125rem' }}>View All Fleet Reports</button>
+             <button 
+               onClick={() => setShowBusReports(true)}
+               className="btn btn-secondary" 
+               style={{ padding: '0.5rem 2rem', fontSize: '0.8125rem' }}
+             >
+               View All Fleet Reports
+             </button>
           </div>
         )}
       </div>
