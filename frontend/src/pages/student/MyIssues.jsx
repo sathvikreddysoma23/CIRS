@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { 
   Filter, 
   Search, 
@@ -8,7 +8,9 @@ import {
   AlertCircle,
   MoreVertical,
   Plus,
-  Loader2
+  Loader2,
+  Trash2,
+  RefreshCw
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { complaintService } from '../../services/api'
@@ -19,8 +21,12 @@ const MyIssues = () => {
   const [issues, setIssues] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
   const [filter, setFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const [activeMenu, setActiveMenu] = useState(null)
+  
+  const menuRef = useRef(null)
 
   const fetchIssues = async () => {
     setLoading(true)
@@ -41,6 +47,44 @@ const MyIssues = () => {
   useEffect(() => {
     fetchIssues()
   }, [filter])
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setActiveMenu(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleDelete = async (issueId) => {
+    if (!window.confirm('Are you sure you want to delete this complaint? This action cannot be undone.')) return
+    
+    try {
+      await complaintService.delete(issueId)
+      setIssues(issues.filter(i => i._id !== issueId))
+      setSuccessMsg('Complaint deleted successfully.')
+      setTimeout(() => setSuccessMsg(''), 3000)
+    } catch (err) {
+      console.error('Delete failed:', err)
+      setError('Failed to delete the complaint.')
+    }
+    setActiveMenu(null)
+  }
+
+  const handleReraise = async (issueId) => {
+    try {
+      await complaintService.reraise(issueId)
+      setSuccessMsg('Complaint re-raised successfully! The admin has been notified.')
+      fetchIssues() // Refresh to show updated timestamp/history if needed
+      setTimeout(() => setSuccessMsg(''), 3000)
+    } catch (err) {
+      console.error('Re-raise failed:', err)
+      setError(err.response?.data?.detail || 'Failed to re-raise the complaint.')
+    }
+    setActiveMenu(null)
+  }
 
   const filteredIssues = issues.filter(issue => {
     const matchesSearch = issue.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -138,6 +182,15 @@ const MyIssues = () => {
         <div style={{ padding: '1rem', background: '#FEF2F2', color: 'var(--error)', borderRadius: 'var(--radius)', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <AlertCircle size={20} />
           <span>{error}</span>
+          <button onClick={() => setError('')} style={{ marginLeft: 'auto', background: 'none', color: 'inherit', fontWeight: 700 }}>&times;</button>
+        </div>
+      )}
+
+      {successMsg && (
+        <div style={{ padding: '1rem', background: '#ECFDF5', color: 'var(--accent)', borderRadius: 'var(--radius)', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <CheckCircle size={20} />
+          <span>{successMsg}</span>
+          <button onClick={() => setSuccessMsg('')} style={{ marginLeft: 'auto', background: 'none', color: 'inherit', fontWeight: 700 }}>&times;</button>
         </div>
       )}
 
@@ -158,10 +211,73 @@ const MyIssues = () => {
               flexDirection: 'column', 
               justifyContent: 'space-between',
               position: 'relative',
-              borderTop: `4px solid ${getPriorityColor(issue.priority)}`
+              borderTop: `4px solid ${getPriorityColor(issue.priority)}`,
+              paddingBottom: '1rem'
             }}>
               <div style={{ position: 'absolute', top: '1rem', right: '1rem' }}>
-                <button style={{ color: 'var(--text-light)' }}><MoreVertical size={18} /></button>
+                <button 
+                  onClick={() => setActiveMenu(activeMenu === issue._id ? null : issue._id)}
+                  style={{ color: 'var(--text-light)', background: 'none', cursor: 'pointer' }}
+                >
+                  <MoreVertical size={18} />
+                </button>
+                
+                {activeMenu === issue._id && (
+                  <div 
+                    ref={menuRef}
+                    style={{ 
+                      position: 'absolute', 
+                      right: 0, 
+                      top: '2rem', 
+                      background: 'white', 
+                      boxShadow: 'var(--shadow)', 
+                      borderRadius: '8px', 
+                      zIndex: 10,
+                      width: '160px',
+                      overflow: 'hidden',
+                      border: '1px solid var(--border)'
+                    }}
+                  >
+                    <button 
+                      onClick={() => handleReraise(issue._id)}
+                      disabled={issue.status !== 'pending'}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.75rem', 
+                        width: '100%', 
+                        padding: '0.75rem 1rem', 
+                        textAlign: 'left', 
+                        fontSize: '0.875rem',
+                        background: 'none',
+                        color: issue.status === 'pending' ? 'var(--primary)' : 'var(--text-light)',
+                        cursor: issue.status === 'pending' ? 'pointer' : 'not-allowed',
+                        opacity: issue.status === 'pending' ? 1 : 0.5
+                      }}
+                      className="hover-bg"
+                    >
+                      <RefreshCw size={16} /> Re-raise
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(issue._id)}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.75rem', 
+                        width: '100%', 
+                        padding: '0.75rem 1rem', 
+                        textAlign: 'left', 
+                        fontSize: '0.875rem',
+                        background: 'none',
+                        color: 'var(--error)',
+                        cursor: 'pointer'
+                      }}
+                      className="hover-bg"
+                    >
+                      <Trash2 size={16} /> Delete
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div>

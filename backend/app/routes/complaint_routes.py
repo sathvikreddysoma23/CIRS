@@ -94,6 +94,14 @@ async def delete_complaint(
     return await complaint_controller.delete_complaint(complaint_id, current_user)
 
 
+@router.post("/{complaint_id}/reraise", summary="Re-raise a pending complaint (student)")
+async def reraise_complaint(
+    complaint_id: str,
+    current_user: dict = Depends(get_current_active_user),
+):
+    return await complaint_controller.reraise_complaint(complaint_id, current_user)
+
+
 # ──────────────────────────────────────────────────────────────────
 # ADMIN / DEPARTMENT ACTIONS
 # ──────────────────────────────────────────────────────────────────

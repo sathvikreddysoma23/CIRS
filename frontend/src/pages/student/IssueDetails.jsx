@@ -14,15 +14,112 @@ import {
   ClipboardList,
   Loader2,
   Shield,
-  ExternalLink
+  ExternalLink,
+  Image as ImageIcon // Alias Image to ImageIcon to match previous usage correctly
 } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { complaintService } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 
+const StatusStepper = ({ currentStatus }) => {
+  const stages = [
+    { id: 'raised', label: 'Issue Raised', icon: <FileText size={18} /> },
+    { id: 'pending', label: 'Pending', icon: <Clock size={18} /> },
+    { id: 'assigned', label: 'Assigned', icon: <User size={18} /> },
+    { id: 'in_progress', label: 'In Progress', icon: <ClipboardList size={18} /> },
+    { id: 'resolved', label: 'Solved', icon: <CheckCircle size={18} /> }
+  ]
+
+  const getStatusIndex = (status) => {
+    switch (status) {
+      case 'pending': return 1
+      case 'assigned': return 2
+      case 'in_progress': return 3
+      case 'resolved': return 4
+      case 'closed': return 4
+      default: return 0
+    }
+  }
+
+  const currentIndex = getStatusIndex(currentStatus)
+
+  return (
+    <div className="card" style={{ marginBottom: '2rem' }}>
+      <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <Clock size={20} color="var(--secondary)" />
+        Issue Tracking
+      </h3>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        position: 'relative',
+        padding: '0 1rem'
+      }}>
+        {/* Connection Lines */}
+        <div style={{ 
+          position: 'absolute', 
+          top: '20px', 
+          left: '2rem', 
+          right: '2rem', 
+          height: '2px', 
+          background: 'var(--border)', 
+          zIndex: 0 
+        }}>
+          <div style={{ 
+            height: '100%', 
+            background: 'var(--secondary)', 
+            width: `${(currentIndex / (stages.length - 1)) * 100}%`,
+            transition: 'width 0.5s ease'
+          }}></div>
+        </div>
+
+        {stages.map((stage, index) => {
+          const isActive = index <= currentIndex
+          const isCurrent = index === currentIndex
+          
+          return (
+            <div key={stage.id} style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              zIndex: 1,
+              position: 'relative'
+            }}>
+              <div style={{ 
+                width: '40px', 
+                height: '40px', 
+                borderRadius: '50%', 
+                background: isActive ? 'var(--secondary)' : 'white', 
+                border: `2px solid ${isActive ? 'var(--secondary)' : 'var(--border)'}`,
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: isActive ? 'white' : 'var(--text-light)',
+                transition: 'all 0.3s ease',
+                boxShadow: isCurrent ? '0 0 0 4px rgba(59, 130, 246, 0.2)' : 'none'
+              }}>
+                {stage.icon}
+              </div>
+              <span style={{ 
+                fontSize: '0.75rem', 
+                fontWeight: isActive ? 700 : 500, 
+                marginTop: '0.75rem',
+                color: isActive ? 'var(--primary)' : 'var(--text-light)',
+                textAlign: 'center',
+                maxWidth: '60px'
+              }}>
+                {stage.label}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 const IssueDetails = () => {
   const { id } = useParams()
-  const { user } = useAuth()
   const [issue, setIssue] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -48,7 +145,6 @@ const IssueDetails = () => {
   const handleSendComment = (e) => {
     e.preventDefault()
     if (!comment) return
-    // In a real app, this would be an API call to save the comment
     console.log('Sending comment:', comment)
     setComment('')
   }
@@ -79,6 +175,7 @@ const IssueDetails = () => {
       case 'assigned': return { color: 'var(--secondary)', bg: 'rgba(59, 130, 246, 0.1)', text: 'Assigned' }
       case 'in_progress': return { color: 'var(--secondary)', bg: 'rgba(59, 130, 246, 0.1)', text: 'In Progress' }
       case 'closed': return { color: 'var(--text-light)', bg: 'rgba(107, 114, 128, 0.1)', text: 'Closed' }
+      case 'rejected': return { color: 'var(--error)', bg: 'rgba(239, 68, 68, 0.1)', text: 'Rejected' }
       default: return { color: 'var(--text-light)', bg: 'rgba(107, 114, 128, 0.1)', text: status }
     }
   }
@@ -91,9 +188,22 @@ const IssueDetails = () => {
         <Link to="/student/my-issues" style={{ color: 'var(--text-light)' }}><ArrowLeft size={24} /></Link>
         <div>
           <h1 className="title" style={{ margin: 0 }}>Issue Details</h1>
-          <p style={{ color: 'var(--text-light)' }}>Issue #{issue._id.slice(-8).toUpperCase()}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <p style={{ color: 'var(--text-light)' }}>Issue #{issue._id.slice(-8).toUpperCase()}</p>
+            <span style={{ 
+              fontSize: '0.75rem', 
+              padding: '0.125rem 0.5rem', 
+              background: 'var(--background)', 
+              borderRadius: '4px',
+              color: 'var(--text-light)'
+            }}>
+              {issue.status}
+            </span>
+          </div>
         </div>
       </div>
+
+      <StatusStepper currentStatus={issue.status} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -193,41 +303,44 @@ const IssueDetails = () => {
           <div className="card">
             <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <MessageSquare size={20} color="var(--primary)" />
-              Resolution Notes & AI Analysis
+              Resolution Notes & Status Updates
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
-              {issue.resolution_note ? (
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <div style={{ width: 40, height: 40, background: 'var(--secondary-light)', color: 'var(--primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
-                    {issue.assigned_department ? issue.assigned_department[0] : 'D'}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ background: 'var(--background)', padding: '1rem', borderRadius: '0 12px 12px 12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                        <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{issue.assigned_department} Staff</span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Resolved Note</span>
+              {issue.status_history && issue.status_history.length > 0 ? (
+                issue.status_history.map((h, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ 
+                      width: 40, height: 40, 
+                      background: 'var(--secondary-light)', 
+                      color: 'var(--primary)', 
+                      borderRadius: '50%', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      fontWeight: 700,
+                      flexShrink: 0
+                    }}>
+                      <User size={18} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ background: 'var(--background)', padding: '1rem', borderRadius: '0 12px 12px 12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                          <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Status: {h.status.replace('_', ' ')}</span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>{new Date(h.updated_at).toLocaleString()}</span>
+                        </div>
+                        <p style={{ fontSize: '0.875rem' }}>{h.note || 'No additional notes provided.'}</p>
                       </div>
-                      <p style={{ fontSize: '0.875rem' }}>{issue.resolution_note}</p>
                     </div>
                   </div>
-                </div>
+                ))
               ) : (
                 <div style={{ padding: '1.5rem', background: 'var(--background)', borderRadius: 'var(--radius)', textAlign: 'center' }}>
                   <p style={{ fontSize: '0.875rem', color: 'var(--text-light)' }}>
-                    {issue.status === 'pending' ? 'Issue is waiting for review.' : 'Staff is currently working on this issue.'}
+                    {issue.status === 'pending' ? 'Issue is waiting for review.' : 'No status updates yet.'}
                   </p>
                 </div>
               )}
-
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', opacity: 0.8 }}>
-                  <div style={{ padding: '0.25rem 0.5rem', background: 'var(--secondary-light)', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 700, color: 'var(--primary)' }}>AI CLASSIFIER</div>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>
-                    Identified Category: <strong style={{ color: 'var(--primary)' }}>{issue.ai_category}</strong> with {Math.round(issue.ai_confidence * 100)}% confidence.
-                  </p>
-                </div>
-              </div>
             </div>
 
             <form onSubmit={handleSendComment} style={{ display: 'flex', gap: '1rem' }}>
@@ -248,61 +361,16 @@ const IssueDetails = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           <div className="card">
             <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <ClipboardList size={18} /> Resolution Timeline
+              <Shield size={18} /> Admin Information
             </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative' }}>
-              <div style={{ position: 'absolute', left: 20, top: 0, bottom: 0, width: 2, background: 'var(--border)' }}></div>
-
-              {/* Submission Entry (Initial) */}
-              <div style={{ display: 'flex', gap: '1rem', position: 'relative', zIndex: 1 }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'white', border: '2px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)' }}>
-                  <CheckCircle size={18} />
-                </div>
-                <div>
-                  <h4 style={{ fontSize: '0.875rem', fontWeight: 700 }}>Ticket Created</h4>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.25rem' }}>{new Date(issue.created_at).toLocaleString()}</p>
-                </div>
-              </div>
-
-              {/* Dynamic History */}
-              {issue.status_history && issue.status_history.map((h, i) => {
-                const stepStatus = getStatusInfo(h.status)
-                return (
-                  <div key={i} style={{ display: 'flex', gap: '1rem', position: 'relative', zIndex: 1 }}>
-                    <div style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: '50%',
-                      background: 'white',
-                      border: `2px solid ${stepStatus.color}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: stepStatus.color
-                    }}>
-                      <Clock size={18} />
-                    </div>
-                    <div>
-                      <h4 style={{ fontSize: '0.875rem', fontWeight: 700 }}>{stepStatus.text}</h4>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.25rem' }}>{new Date(h.updated_at).toLocaleString()}</p>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.25rem', fontStyle: 'italic' }}>{h.note}</p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          <div className="card">
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>Support Information</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div style={{ width: 36, height: 36, borderRadius: 'var(--radius)', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <User size={18} color="var(--primary)" />
                 </div>
                 <div>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Handled By</p>
-                  <p style={{ fontSize: '0.875rem', fontWeight: 600 }}>{issue.assigned_to ? 'Staff Member' : 'System AI'}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Assigned Staff</p>
+                  <p style={{ fontSize: '0.875rem', fontWeight: 600 }}>{issue.assigned_to ? 'Department Specialist' : 'Not yet assigned'}</p>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -311,10 +379,18 @@ const IssueDetails = () => {
                 </div>
                 <div>
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Department</p>
-                  <p style={{ fontSize: '0.875rem', fontWeight: 600 }}>{issue.assigned_department || issue.category || 'Triage'}</p>
+                  <p style={{ fontSize: '0.875rem', fontWeight: 600 }}>{issue.assigned_department || 'General Admin'}</p>
                 </div>
               </div>
             </div>
+          </div>
+          
+          <div className="card">
+             <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>Need Help?</h3>
+             <p style={{ fontSize: '0.875rem', color: 'var(--text-light)', marginBottom: '1rem' }}>
+               If you have urgent questions regarding this issue, please contact the campus support desk.
+             </p>
+             <button className="btn btn-secondary" style={{ width: '100%' }}>Contact Support</button>
           </div>
         </div>
       </div>

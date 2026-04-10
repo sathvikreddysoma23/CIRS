@@ -250,6 +250,37 @@ async def delete_complaint(complaint_id: str, current_user: dict) -> dict:
     return {"message": "Complaint deleted successfully."}
 
 
+async def reraise_complaint(complaint_id: str, current_user: dict) -> dict:
+    """Student re-raises a pending complaint to alert admin."""
+    db = get_db()
+    complaint = await db["complaints"].find_one({"_id": ObjectId(complaint_id)})
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found.")
+
+    if complaint["student_id"] != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="Access denied.")
+
+    if complaint["status"] != ComplaintStatus.pending:
+        raise HTTPException(status_code=400, detail="Only pending complaints can be re-raised.")
+
+    status_entry = {
+        "status": complaint["status"],
+        "note": "Re-raised by student (Reminder to admin)",
+        "updated_by": current_user["sub"],
+        "updated_at": datetime.utcnow(),
+    }
+
+    await db["complaints"].update_one(
+        {"_id": ObjectId(complaint_id)},
+        {
+            "$set": {"updated_at": datetime.utcnow()},
+            "$push": {"status_history": status_entry},
+        },
+    )
+
+    return {"message": "Complaint re-raised successfully."}
+
+
 async def get_admin_stats(current_user: dict) -> dict:
     db = get_db()
     total = await db["complaints"].count_documents({})

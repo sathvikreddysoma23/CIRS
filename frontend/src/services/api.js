@@ -47,10 +47,12 @@ export const authService = {
 export const complaintService = {
   list: (params) => API.get('/complaints/', { params }), 
   getStats: () => API.get('/complaints/stats'),
-  detail: (id) => API.get(`/complaints/${id}`), // Removed trailing slash for path parameter compatibility
+  detail: (id) => API.get(`/complaints/${id}`), 
   create: (formData) => API.post('/complaints/', formData), 
   updateStatus: (id, status, note) => API.post(`/complaints/${id}/status`, { status, note }),
   assign: (id, department_user_id) => API.post(`/complaints/${id}/assign`, { department_user_id }),
+  delete: (id) => API.delete(`/complaints/${id}`),
+  reraise: (id) => API.post(`/complaints/${id}/reraise`),
 }
 
 
