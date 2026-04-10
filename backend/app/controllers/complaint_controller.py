@@ -4,6 +4,7 @@ from app.models.complaint import ComplaintCreate, ComplaintUpdate, StatusUpdate,
 from app.utils.file_upload import upload_image
 from app.utils.email_sender import send_complaint_submitted_email, send_status_update_email, send_assignment_email
 from app.ai.classifier import classify_complaint
+from app.controllers.notification_controller import create_notification
 from bson import ObjectId
 from datetime import datetime
 from typing import Optional, List
@@ -76,6 +77,15 @@ async def create_complaint(
             )
     except Exception:
         pass
+
+    # Create notification
+    await create_notification(
+        user_id=current_user["sub"],
+        title="Issue Submitted",
+        message=f"Your issue '{complaint_data.title}' has been received and is now PENDING review.",
+        type="status_change",
+        link=f"/student/issue/{new_complaint['_id']}"
+    )
 
     return new_complaint
 
@@ -179,6 +189,15 @@ async def assign_complaint(complaint_id: str, department_user_id: str, current_u
         },
     )
 
+    # Create notification
+    await create_notification(
+        user_id=complaint["student_id"],
+        title="Issue Assigned",
+        message=f"Your issue '{complaint['title']}' has been assigned to {dept_user['name']} ({dept_user.get('department', 'N/A')}).",
+        type="assignment",
+        link=f"/student/issue/{complaint_id}"
+    )
+
     # Notify department
     try:
         await send_assignment_email(
@@ -231,6 +250,16 @@ async def update_complaint_status(
             )
     except Exception:
         pass
+
+    # Create notification
+    status_text = new_status.replace('_', ' ').capitalize()
+    await create_notification(
+        user_id=complaint["student_id"],
+        title=f"Issue {status_text}",
+        message=f"Your issue '{complaint['title']}' status has been updated to {status_text}. Note: {note}",
+        type="status_change",
+        link=f"/student/issue/{complaint_id}"
+    )
 
     updated = await db["complaints"].find_one({"_id": ObjectId(complaint_id)})
     return _serialize(updated)

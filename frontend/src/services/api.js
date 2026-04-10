@@ -63,5 +63,12 @@ export const adminService = {
   deleteUser: (id) => API.delete(`/admin/users/${id}`),
 }
 
+export const notificationService = {
+  list: (unread = true) => API.get('/notifications/', { params: { unread } }),
+  markRead: (id) => API.post(`/notifications/${id}/read`),
+  markAllRead: () => API.post('/notifications/read-all'),
+  delete: (id) => API.delete(`/notifications/${id}`),
+}
+
 export default API
 

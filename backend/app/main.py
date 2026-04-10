@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 
 from app.database import connect_db, close_db
 from app.config import settings
-from app.routes import auth_routes, complaint_routes, admin_routes, operations_routes, ai_routes
+from app.routes import auth_routes, complaint_routes, admin_routes, operations_routes, ai_routes, notification_routes
 
 # ─── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -124,6 +124,7 @@ app.include_router(complaint_routes.router,  prefix=API_PREFIX)
 app.include_router(admin_routes.router,      prefix=API_PREFIX)
 app.include_router(operations_routes.router, prefix=API_PREFIX)
 app.include_router(ai_routes.router,         prefix=API_PREFIX)
+app.include_router(notification_routes.router, prefix=API_PREFIX)
 
 
 # ─── Root & Health ───────────────────────────────────────────────────────────
