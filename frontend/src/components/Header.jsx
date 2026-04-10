@@ -6,6 +6,9 @@ import { Link } from 'react-router-dom'
 const Header = () => {
   const { user } = useAuth()
 
+  // Extra check to ensure we always have the latest user data
+  const displayName = user?.name || 'Authorized'
+
   return (
     <header style={{
       height: 'var(--header-height)',
@@ -74,8 +77,8 @@ const Header = () => {
         {/* Profile Section */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '0.875rem', fontWeight: 700, stroke: 'none', color: '#111827' }}>
-                {user?.name || 'Authorized'}
+              <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', whiteSpace: 'nowrap' }}>
+                {displayName}
               </span>
               <span style={{ fontSize: '0.6875rem', color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>
                 {user?.role === 'department' ? user.department : user?.role || 'Guest'}

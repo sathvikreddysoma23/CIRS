@@ -28,6 +28,19 @@ const Profile = () => {
     role: user?.role || ''
   })
   const [isEditing, setIsEditing] = useState(false)
+  
+  // Sync form data whenever user changes (from context or initial load)
+  React.useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        department: user.department || '',
+        phone: user.phone || '',
+        email: user.email || '',
+        role: user.role || ''
+      })
+    }
+  }, [user])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
