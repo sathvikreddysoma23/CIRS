@@ -19,7 +19,8 @@ import {
   Bus,
   ShieldAlert,
   Search,
-  UserCircle
+  UserCircle,
+  RotateCcw
 } from 'lucide-react'
 import {
   BarChart as RBarChart,
@@ -168,7 +169,7 @@ const AdminDashboard = () => {
     { id: 'total', label: 'System Issues', value: filteredStats.complaints.total, icon: <Activity size={24} />, color: 'var(--primary)', bg: 'rgba(30, 58, 138, 0.05)', showAlways: true },
     { id: 'resolved', label: 'Total Resolved', value: filteredStats.complaints.resolved, icon: <CheckCircle size={24} />, color: 'var(--accent)', bg: 'rgba(16, 185, 129, 0.05)', showAlways: true },
     { id: 'pending', label: 'Unresolved Tasks', value: filteredStats.complaints.pending || (stats.complaints.pending + stats.complaints.in_progress), icon: <Clock size={24} />, color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.05)', showAlways: true },
-    { id: 'buses', label: 'Bus Alerts', value: busStatData.bad, icon: <Bus size={24} />, color: '#EF4444', bg: 'rgba(239, 68, 68, 0.05)', showAlways: true },
+    { id: 'buses', label: 'Bus Alerts', value: stats.operations.buses_under_maintenance, icon: <Bus size={24} />, color: '#EF4444', bg: 'rgba(239, 68, 68, 0.05)', showAlways: true },
     { id: 'users', label: 'System Users', value: stats.users.total, icon: <Users size={24} />, color: 'var(--secondary)', bg: 'rgba(59, 130, 246, 0.05)', showAlways: false },
   ]
 
@@ -177,7 +178,16 @@ const AdminDashboard = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 className="title" style={{ marginBottom: '0.25rem' }}>Administrator Command Center</h1>
-          <p style={{ color: 'var(--text-light)' }}>System-wide overview of campus issues and resolutions.</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <p style={{ color: 'var(--text-light)', margin: 0 }}>System-wide overview of campus issues and resolutions.</p>
+            <button 
+              onClick={fetchAdminData} 
+              style={{ background: 'none', border: 'none', color: 'var(--secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 700 }}
+              title="Refresh Dashboard"
+            >
+              <RotateCcw size={14} className={loading ? 'animate-spin' : ''} /> Sync Now
+            </button>
+          </div>
         </div>
         <div style={{ display: 'flex', gap: '1rem', position: 'relative' }}>
           <div style={{ position: 'relative' }}>
@@ -409,8 +419,8 @@ const AdminDashboard = () => {
           <div style={{ display: 'flex', gap: '1.5rem' }}>
              <div style={{ textAlign: 'right' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-light)', display: 'block', textTransform: 'uppercase' }}>Fleet Status</span>
-                <span style={{ fontSize: '0.875rem', fontWeight: 800, color: busStatData.bad > 0 ? '#EF4444' : '#10B981' }}>
-                  {busStatData.bad > 0 ? `${busStatData.bad} Vehicles Need Attention` : 'All Systems Operational'}
+                <span style={{ fontSize: '0.875rem', fontWeight: 800, color: stats.operations.buses_under_maintenance > 0 ? '#EF4444' : '#10B981' }}>
+                  {stats.operations.buses_under_maintenance > 0 ? `${stats.operations.buses_under_maintenance} Vehicles Need Attention` : 'All Systems Operational'}
                 </span>
              </div>
           </div>
