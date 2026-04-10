@@ -278,40 +278,25 @@ async def get_bus_reports(bus_number: Optional[str] = None) -> list:
     if bus_number:
         query["bus_number"] = bus_number
     
-    # We want to join with users to get the driver names
-    # Using a safer approach that doesn't crash on invalid ObjectId strings
-    pipeline = [
-        {"$match": query},
-        {"$sort": {"created_at": -1}},
-        {
-            "$lookup": {
-                "from": "users",
-                "let": {"d_id": "$driver_id"},
-                "pipeline": [
-                    {
-                        "$match": {
-                            "$expr": {
-                                "$eq": [{"$toString": "$_id"}, "$$d_id"]
-                            }
-                        }
-                    }
-                ],
-                "as": "driver_info"
-            }
-        },
-        {
-            "$unwind": {
-                "path": "$driver_info",
-                "preserveNullAndEmptyArrays": True
-            }
-        },
-        {
-            "$addFields": {
-                "driver_name": "$driver_info.name"
-            }
-        },
-        {"$project": {"driver_info": 0}}
-    ]
-    
-    cursor = db["bus_reports"].aggregate(pipeline)
-    return [_s(doc) async for doc in cursor]
+    try:
+        cursor = db["bus_reports"].find(query).sort("created_at", -1)
+        reports = [_s(doc) async for doc in cursor]
+        
+        for report in reports:
+            driver_id = report.get("driver_id")
+            if driver_id:
+                try:
+                    driver = await db["users"].find_one({"_id": ObjectId(driver_id)})
+                    if driver:
+                        report["driver_name"] = driver.get("name", "Unknown Driver")
+                    else:
+                        report["driver_name"] = "Driver (ID: " + str(driver_id)[:8] + ")"
+                except:
+                    report["driver_name"] = "Driver (ID: " + str(driver_id)[:8] + ")"
+            else:
+                report["driver_name"] = "System Auto-Report"
+        
+        return reports
+    except Exception as e:
+        print(f"Error fetching bus reports: {e}")
+        return []
