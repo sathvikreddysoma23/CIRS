@@ -80,7 +80,7 @@ const Profile = () => {
     <div className="animate-in fade-in duration-500 max-w-5xl mx-auto">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
-          <h1 className="title" style={{ margin:0 }}>User Profile</h1>
+          <h1 className="title" style={{ margin:0 }}>User Profile (Updated)</h1>
           <p style={{ color: 'var(--text-light)' }}>Manage your personal account settings and security.</p>
         </div>
         <button onClick={() => setIsEditing(!isEditing)} className="btn btn-secondary">
@@ -107,7 +107,6 @@ const Profile = () => {
                 boxShadow: '0 10px 15px -3px rgba(30, 58, 138, 0.2)'
               }}>
                 {formData.name.charAt(0)}
-              </div>
               </div>
             </div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '0.25rem' }}>{formData.name}</h2>
