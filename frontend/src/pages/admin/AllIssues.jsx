@@ -18,7 +18,8 @@ import {
   History,
   Activity,
   Image as ImageIcon,
-  UserCog
+  UserCog,
+  Trash2
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { complaintService, adminService } from '../../services/api'
@@ -38,6 +39,7 @@ const AllIssues = () => {
   const [selectedIssue, setSelectedIssue] = useState(null)
   const [selectedStaffId, setSelectedStaffId] = useState('')
   const [assigning, setAssigning] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const fetchAllIssues = async () => {
     setLoading(true)
@@ -104,6 +106,26 @@ const AllIssues = () => {
       alert('Failed to assign issue. Please try again.')
     } finally {
       setAssigning(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!selectedIssue) return
+    if (!window.confirm("Are you sure you want to delete this complaint? This action cannot be undone and should only be used if the complaint is not genuine.")) {
+      return
+    }
+    
+    setDeleting(true)
+    try {
+      await complaintService.delete(selectedIssue._id)
+      setShowDetailModal(false)
+      fetchAllIssues() // Refresh list
+      alert('Complaint deleted successfully.')
+    } catch (err) {
+      console.error('Deletion failed:', err)
+      alert('Failed to delete complaint. Please try again.')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -452,6 +474,30 @@ const AllIssues = () => {
                       {selectedIssue.assigned_to_name ? 'Change Handler' : 'Assign Handler'}
                     </button>
                   )}
+
+                  <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+                     <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--error)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                       <AlertTriangle size={16} /> Danger Zone
+                     </h4>
+                     <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginBottom: '1rem' }}>
+                       If you think this complaint is not genuine or spam, you can remove it from the system.
+                     </p>
+                     <button 
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        className="btn" 
+                        style={{ 
+                          width: '100%', 
+                          justifyContent: 'center', 
+                          background: 'rgba(239, 68, 68, 0.1)', 
+                          color: 'var(--error)', 
+                          border: '1px solid rgba(239, 68, 68, 0.2)',
+                          gap: '0.5rem'
+                        }}
+                      >
+                        <Trash2 size={16} /> {deleting ? 'Deleting...' : 'Delete Complaint'}
+                      </button>
+                  </div>
                 </div>
               </div>
             </div>
