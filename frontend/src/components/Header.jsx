@@ -78,7 +78,7 @@ const Header = () => {
                 {user?.name || 'Authorized'}
               </span>
               <span style={{ fontSize: '0.6875rem', color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>
-                {user?.role || 'Guest'}
+                {user?.role === 'department' ? user.department : user?.role || 'Guest'}
               </span>
            </div>
            <div style={{
