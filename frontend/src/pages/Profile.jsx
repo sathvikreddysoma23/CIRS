@@ -7,7 +7,6 @@ import {
   Building2, 
   Edit2, 
   Save, 
-  Camera,
   Settings,
   Bell,
   Trash2,
@@ -109,30 +108,17 @@ const Profile = () => {
               }}>
                 {formData.name.charAt(0)}
               </div>
-              <button style={{ 
-                position: 'absolute', 
-                bottom: 0, 
-                right: 0, 
-                width: 36, 
-                height: 36, 
-                borderRadius: '50%', 
-                background: 'var(--secondary)', 
-                color: 'white', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                border: '4px solid var(--surface)'
-              }}>
-                <Camera size={16} />
-              </button>
+              </div>
             </div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '0.25rem' }}>{formData.name}</h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-light)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1.5rem' }}>{formData.role}</p>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem', color: 'var(--text-light)' }}>
-                <Building2 size={16} /> {formData.department}
-              </div>
+              {(formData.role === 'department') && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem', color: 'var(--text-light)' }}>
+                  <Building2 size={16} /> {formData.department}
+                </div>
+              )}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem', color: 'var(--text-light)' }}>
                 <Mail size={16} /> {formData.email}
               </div>
@@ -212,24 +198,26 @@ const Profile = () => {
                   <Shield size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
                 </div>
               </div>
-              <div>
-                <label>Department</label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type="text" 
-                    disabled={!isEditing}
-                    style={{ 
-                      paddingLeft: '3rem', 
-                      backgroundColor: !isEditing ? '#F3F4F6' : 'white',
-                      cursor: !isEditing ? 'not-allowed' : 'text',
-                      color: !isEditing ? '#6B7280' : '#111827'
-                    }}
-                    value={formData.department}
-                    onChange={(e) => setFormData({...formData, department: e.target.value})}
-                  />
-                  <Building2 size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+              {formData.role === 'department' && (
+                <div>
+                  <label>Department</label>
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type="text" 
+                      disabled={!isEditing}
+                      style={{ 
+                        paddingLeft: '3rem', 
+                        backgroundColor: !isEditing ? '#F3F4F6' : 'white',
+                        cursor: !isEditing ? 'not-allowed' : 'text',
+                        color: !isEditing ? '#6B7280' : '#111827'
+                      }}
+                      value={formData.department}
+                      onChange={(e) => setFormData({...formData, department: e.target.value})}
+                    />
+                    <Building2 size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {isEditing && (
