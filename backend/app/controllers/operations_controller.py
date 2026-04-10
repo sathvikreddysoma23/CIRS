@@ -220,9 +220,18 @@ async def submit_bus_report(data: dict) -> dict:
     
     # 2. Update the bus status in the 'buses' collection
     status = "operational" if data.get("condition") == "good" else "under_maintenance"
+    bus_update = {
+        "status": status,
+        "updated_at": datetime.utcnow()
+    }
+    if data.get("current_location"):
+        bus_update["current_location"] = data.get("current_location")
+    if data.get("route"):
+        bus_update["route"] = data.get("route")
+
     await db["buses"].update_one(
         {"bus_number": data.get("bus_number")},
-        {"$set": {"status": status, "updated_at": datetime.utcnow()}},
+        {"$set": bus_update},
         upsert=True
     )
 
@@ -234,7 +243,7 @@ async def submit_bus_report(data: dict) -> dict:
         
         new_complaint = {
             "title": f"BUS MAINTENANCE: {data.get('bus_number')}",
-            "description": f"DRIVER REPORT: {data.get('issue_description')}\nReport ID: {data['_id']}",
+            "description": f"DRIVER REPORT: {data.get('issue_description')}\nRoute: {data.get('route', 'N/A')}\nLocation: {data.get('current_location', 'N/A')}\nReport ID: {data['_id']}",
             "location": f"Bus {data.get('bus_number')}",
             "category": "transport",
             "priority": "high",

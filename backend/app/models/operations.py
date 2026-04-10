@@ -191,6 +191,8 @@ class BusReportBase(BaseModel):
     driver_id: str
     condition: BusCondition
     issue_description: Optional[str] = None
+    current_location: Optional[str] = None
+    route: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
@@ -201,6 +203,8 @@ class BusReportCreate(BaseModel):
     bus_number: str
     condition: BusCondition
     issue_description: Optional[str] = None
+    current_location: Optional[str] = None
+    route: Optional[str] = None
 
 
 class BusReportInDB(BusReportBase):

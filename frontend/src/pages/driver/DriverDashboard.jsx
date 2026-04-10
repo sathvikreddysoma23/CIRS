@@ -1,5 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Bus, CheckCircle2, AlertCircle, Mic, MicOff, Send, LogOut, ChevronRight, CheckCircle, RotateCcw } from 'lucide-react'
+import { 
+  Bus, 
+  CheckCircle2, 
+  AlertCircle, 
+  Mic, 
+  MicOff, 
+  Send, 
+  LogOut, 
+  ChevronRight, 
+  CheckCircle, 
+  RotateCcw, 
+  ArrowRight, 
+  MapPin, 
+  Navigation 
+} from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../services/api'
 
@@ -13,6 +27,8 @@ const DriverDashboard = () => {
   const [isRecording, setIsRecording] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState(null)
+  const [route, setRoute] = useState('')
+  const [location, setLocation] = useState('')
 
   const recognitionRef = useRef(null)
 
@@ -86,7 +102,9 @@ const DriverDashboard = () => {
       await api.post('/operations/buses/report', {
         bus_number: busNumber,
         condition: condition,
-        issue_description: condition === 'bad' ? description : 'N/A'
+        issue_description: condition === 'bad' ? description : 'N/A',
+        route: route,
+        current_location: location
       })
       setTripStep('COMPLETED')
       setMessage({ type: 'success', text: 'Report submitted successfully. Thank you!' })
@@ -101,6 +119,8 @@ const DriverDashboard = () => {
   const resetTrip = () => {
     setTripStep('IDENTIFY')
     setBusNumber('')
+    setRoute('')
+    setLocation('')
     setCondition(null)
     setDescription('')
     setMessage(null)
@@ -150,32 +170,52 @@ const DriverDashboard = () => {
             </div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem' }}>Prepare for Duty</h2>
             <p style={{ color: '#6B7280', marginBottom: '2rem' }}>Please enter the bus number you are authorized to drive today.</p>
-            
             <form onSubmit={handleStartTrip} style={{ maxWidth: 400, margin: '0 auto' }}>
-              <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
+              <div style={{ position: 'relative', marginBottom: '1.25rem' }}>
                 <input 
                   type="text" 
-                  placeholder="Example: KA-01-F-1234" 
+                  placeholder="Bus Number (e.g. KA-01-F-1234)" 
                   value={busNumber}
                   onChange={(e) => setBusNumber(e.target.value)}
                   required
                   style={{ 
-                    width: '100%', 
-                    padding: '1rem 1rem 1rem 3rem', 
-                    borderRadius: '14px', 
-                    border: '2px solid #E5E7EB',
-                    fontSize: '1.125rem',
-                    fontWeight: 600,
-                    outline: 'none',
-                    transition: 'border-color 0.2s'
+                    width: '100%', padding: '0.875rem 1rem 0.875rem 3rem', borderRadius: '12px', 
+                    border: '2px solid #E5E7EB', fontSize: '1rem', fontWeight: 600, outline: 'none'
                   }}
-                  onFocus={(e) => e.target.style.borderColor = '#2563EB'}
-                  onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
                 />
-                <Bus size={20} color="#9CA3AF" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+                <Bus size={18} color="#9CA3AF" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
               </div>
+
+              <div style={{ position: 'relative', marginBottom: '1.25rem' }}>
+                <input 
+                  type="text" 
+                  placeholder="Route (e.g. Campus to City)" 
+                  value={route}
+                  onChange={(e) => setRoute(e.target.value)}
+                  style={{ 
+                    width: '100%', padding: '0.875rem 1rem 0.875rem 3rem', borderRadius: '12px', 
+                    border: '2px solid #E5E7EB', fontSize: '1rem', fontWeight: 600, outline: 'none'
+                  }}
+                />
+                <Navigation size={18} color="#9CA3AF" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+              </div>
+
+              <div style={{ position: 'relative', marginBottom: '2rem' }}>
+                <input 
+                  type="text" 
+                  placeholder="Your Location (e.g. Gate 1)" 
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  style={{ 
+                    width: '100%', padding: '0.875rem 1rem 0.875rem 3rem', borderRadius: '12px', 
+                    border: '2px solid #E5E7EB', fontSize: '1rem', fontWeight: 600, outline: 'none'
+                  }}
+                />
+                <MapPin size={18} color="#9CA3AF" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+              </div>
+
               <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '1rem', borderRadius: '14px', fontSize: '1rem', fontWeight: 700 }}>
-                Commence Duty <ChevronRight size={20} />
+                Commence Duty <ArrowRight size={20} style={{ marginLeft: '0.5rem' }} />
               </button>
             </form>
           </div>

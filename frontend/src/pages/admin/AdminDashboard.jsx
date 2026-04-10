@@ -372,6 +372,21 @@ const AdminDashboard = () => {
               <tr key={issue._id} style={{ borderBottom: '1px solid var(--border)' }} className="hover-lift">
                 <td style={{ padding: '1.25rem 0' }}>
                   <h4 style={{ fontSize: '0.925rem', fontWeight: 700, color: 'var(--primary)', margin: 0 }}>{issue.title}</h4>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '0.75rem' }}>
+                         <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-light)', background: 'var(--background)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                           Bus: {issue.bus_number}
+                         </span>
+                         {issue.route && (
+                           <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--secondary)', background: 'rgba(59, 130, 246, 0.05)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                             Route: {issue.route}
+                           </span>
+                         )}
+                         {issue.current_location && (
+                           <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--accent)', background: 'rgba(16, 185, 129, 0.05)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                             Loc: {issue.current_location}
+                           </span>
+                         )}
+                      </div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', display: 'block', marginTop: '0.25rem', textTransform: 'capitalize' }}>{issue.category}</span>
                 </td>
                 <td style={{ padding: '1.25rem 0' }}>
@@ -462,13 +477,25 @@ const AdminDashboard = () => {
                 </p>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                       <Users size={12} color="#64748b" />
-                    </div>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Driver ID: {report.driver_id.substring(0, 8)}</span>
-                 </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem', width: '100%', paddingBottom: '0.75rem' }}>
+                    {report.route && (
+                      <span title="Route" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#3B82F6', background: 'rgba(59, 130, 246, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Navigation size={10} /> {report.route}
+                      </span>
+                    )}
+                    {report.current_location && (
+                      <span title="Location" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#10B981', background: 'rgba(16, 185, 129, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <MapPin size={10} /> {report.current_location}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                           <Users size={12} color="#64748b" />
+                        </div>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>{report.driver_name || `ID: ${report.driver_id.substring(0, 8)}`}</span>
+                     </div>
                  <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600 }}>
                     {new Date(report.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                  </span>
@@ -708,8 +735,30 @@ const BusReportsSlide = ({ reports, stats, onClose }) => {
                   {new Date(report.created_at).toLocaleString()}
                 </span>
               </div>
-              <p style={{ fontSize: '1rem', color: '#334155', fontWeight: 500, lineHeight: 1.6, marginBottom: '1.25rem' }}>
-                {report.issue_description || 'No issues reported.'}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem', background: '#F8FAFC', padding: '1rem', borderRadius: '12px' }}>
+                <div>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', display: 'block', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Bus Number</span>
+                  <span style={{ fontWeight: 700, color: '#1E293B' }}>{report.bus_number}</span>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', display: 'block', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Current Route</span>
+                  <span style={{ fontWeight: 700, color: '#1E293B' }}>{report.route || 'Not Specified'}</span>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', display: 'block', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Reported Location</span>
+                  <span style={{ fontWeight: 700, color: '#1E293B' }}>{report.current_location || 'Not Specified'}</span>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', display: 'block', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Condition</span>
+                  <span style={{ fontWeight: 700, color: report.condition === 'good' ? '#10B981' : '#EF4444', textTransform: 'capitalize' }}>{report.condition}</span>
+                </div>
+              </div>
+
+              <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#475569', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <AlertCircle size={16} /> Technical Observations
+              </h4>
+              <p style={{ fontSize: '1rem', color: '#334155', fontWeight: 500, lineHeight: 1.6, marginBottom: '1.25rem', background: '#F1F5F9', padding: '1.25rem', borderRadius: '12px' }}>
+                {report.issue_description || 'No detailed issues reported.'}
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
