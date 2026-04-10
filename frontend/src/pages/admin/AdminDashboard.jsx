@@ -52,9 +52,6 @@ const AdminDashboard = () => {
   const [filterType, setFilterType] = useState('all') // all, pending, resolved, unsolved
   const [showFilters, setShowFilters] = useState(false)
   const [showAnalytics, setShowAnalytics] = useState(false)
-  const [showBusReports, setShowBusReports] = useState(false)
-  const [busReports, setBusReports] = useState([])
-  const [busStatData, setBusStatData] = useState({ good: 0, bad: 0, total: 0 })
 
   const fetchAdminData = async () => {
     setLoading(true)
@@ -66,20 +63,6 @@ const AdminDashboard = () => {
 
       setStats(overviewRes.data)
       setRecentIssues(complaintsRes.data.complaints)
-
-      // Fetch bus reports independently
-      try {
-        const busReportsRes = await operationsService.getBusReports()
-        const reports = Array.isArray(busReportsRes.data) ? busReportsRes.data : []
-        setBusReports(reports)
-        
-        const total = reports.length
-        const bad = reports.filter(r => r.condition === 'bad').length
-        setBusStatData({ total, bad, good: total - bad })
-      } catch (busErr) {
-        console.error('Failed to load bus reports:', busErr)
-        setBusReports([])
-      }
     } catch (err) {
       console.error('Failed to load admin dashboard:', err)
     } finally {
@@ -90,18 +73,6 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchAdminData()
   }, [])
-
-  useEffect(() => {
-    const view = searchParams.get('view')
-    if (view === 'bus-reports') {
-      setShowBusReports(true)
-    }
-  }, [searchParams])
-
-  const closeBusReports = () => {
-    setShowBusReports(false)
-    setSearchParams({})
-  }
 
   if (loading || !stats) {
     return (
@@ -170,7 +141,6 @@ const AdminDashboard = () => {
     { id: 'total', label: 'System Issues', value: filteredStats.complaints.total, icon: <Activity size={24} />, color: 'var(--primary)', bg: 'rgba(30, 58, 138, 0.05)', showAlways: true },
     { id: 'resolved', label: 'Total Resolved', value: filteredStats.complaints.resolved, icon: <CheckCircle size={24} />, color: 'var(--accent)', bg: 'rgba(16, 185, 129, 0.05)', showAlways: true },
     { id: 'pending', label: 'Unresolved Tasks', value: filteredStats.complaints.pending || (stats.complaints.pending + stats.complaints.in_progress), icon: <Clock size={24} />, color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.05)', showAlways: true },
-    { id: 'buses', label: 'Bus Alerts', value: stats.operations.buses_under_maintenance, icon: <Bus size={24} />, color: '#EF4444', bg: 'rgba(239, 68, 68, 0.05)', showAlways: true },
     { id: 'users', label: 'System Users', value: stats.users.total, icon: <Users size={24} />, color: 'var(--secondary)', bg: 'rgba(59, 130, 246, 0.05)', showAlways: false },
   ]
 
@@ -373,21 +343,6 @@ const AdminDashboard = () => {
               <tr key={issue._id} style={{ borderBottom: '1px solid var(--border)' }} className="hover-lift">
                 <td style={{ padding: '1.25rem 0' }}>
                   <h4 style={{ fontSize: '0.925rem', fontWeight: 700, color: 'var(--primary)', margin: 0 }}>{issue.title}</h4>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '0.75rem' }}>
-                         <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-light)', background: 'var(--background)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
-                           Bus: {issue.bus_number}
-                         </span>
-                         {issue.route && (
-                           <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--secondary)', background: 'rgba(59, 130, 246, 0.05)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
-                             Route: {issue.route}
-                           </span>
-                         )}
-                         {issue.current_location && (
-                           <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--accent)', background: 'rgba(16, 185, 129, 0.05)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
-                             Loc: {issue.current_location}
-                           </span>
-                         )}
-                      </div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', display: 'block', marginTop: '0.25rem', textTransform: 'capitalize' }}>{issue.category}</span>
                 </td>
                 <td style={{ padding: '1.25rem 0' }}>
@@ -418,124 +373,6 @@ const AdminDashboard = () => {
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* NEW BUS CONDITION MONITORING SECTION */}
-      <div className="card animate-in slide-in-from-bottom duration-700" style={{ marginTop: '2.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ width: 44, height: 44, borderRadius: '12px', background: 'rgba(37, 99, 235, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Bus size={24} />
-            </div>
-            <div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Fleet Condition Monitoring</h3>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-light)', margin: 0 }}>Live reports from university bus drivers</p>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: '1.5rem' }}>
-             <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-light)', display: 'block', textTransform: 'uppercase' }}>Fleet Status</span>
-                <span style={{ fontSize: '0.875rem', fontWeight: 800, color: stats.operations.buses_under_maintenance > 0 ? '#EF4444' : '#10B981' }}>
-                  {stats.operations.buses_under_maintenance > 0 ? `${stats.operations.buses_under_maintenance} Vehicles Need Attention` : 'All Systems Operational'}
-                </span>
-             </div>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-          {busReports.slice(0, 4).map((report, idx) => (
-            <div key={idx} style={{ 
-              padding: '1.5rem', 
-              borderRadius: '16px', 
-              border: `1.5px solid ${report.condition === 'bad' ? '#FCA5A5' : '#E2E8F0'}`,
-              background: report.condition === 'bad' ? '#FFF5F5' : 'white',
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
-              {report.condition === 'bad' && (
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#EF4444' }}></div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                <div>
-                   <span style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vehicle Number</span>
-                   <h4 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--primary)', margin: '2px 0 0 0' }}>{report.bus_number}</h4>
-                </div>
-                <div style={{ 
-                  padding: '0.35rem 0.75rem', 
-                  borderRadius: '30px', 
-                  fontSize: '0.75rem', 
-                  fontWeight: 800,
-                  background: report.condition === 'bad' ? '#EF4444' : '#10B981',
-                  color: 'white'
-                }}>
-                  {report.condition.toUpperCase()}
-                </div>
-              </div>
-              
-              <div style={{ marginBottom: '1.25rem' }}>
-                <p style={{ fontSize: '0.875rem', color: '#475569', margin: 0, fontStyle: 'italic' }}>
-                  "{report.issue_description || 'No issues reported.'}"
-                </p>
-              </div>
-
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem', width: '100%', paddingBottom: '0.75rem' }}>
-                    {report.route && (
-                      <span title="Route" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#3B82F6', background: 'rgba(59, 130, 246, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <Navigation size={10} /> {report.route}
-                      </span>
-                    )}
-                    {report.current_location && (
-                      <span title="Location" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#10B981', background: 'rgba(16, 185, 129, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <MapPin size={10} /> {report.current_location}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                           <Users size={12} color="#64748b" />
-                        </div>
-                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>{report.driver_name || `ID: ${report.driver_id.substring(0, 8)}`}</span>
-                     </div>
-                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if(window.confirm('Delete this report?')) {
-                              operationsService.deleteBusReport(report._id).then(() => fetchAdminData());
-                            }
-                          }}
-                          style={{ border: 'none', background: 'none', color: '#94A3B8', cursor: 'pointer', padding: '0.25rem' }}
-                          title="Delete Report"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                        <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600 }}>
-                           {new Date(report.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                     </div>
-                  </div>
-            </div>
-          ))}
-          {busReports.length === 0 && (
-            <div style={{ gridColumn: '1 / -1', padding: '3rem', textAlign: 'center', color: 'var(--text-light)', border: '2px dashed var(--border)', borderRadius: '20px' }}>
-              <Bus size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-              <p style={{ fontWeight: 600 }}>No bus condition reports received yet.</p>
-            </div>
-          )}
-        </div>
-        
-        {busReports.length > 4 && (
-          <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-             <button 
-               onClick={() => setShowBusReports(true)}
-               className="btn btn-secondary" 
-               style={{ padding: '0.5rem 2rem', fontSize: '0.8125rem' }}
-             >
-               View All Fleet Reports
-             </button>
-          </div>
-        )}
       </div>
 
       {/* Full Analytics Modal-like Overlay */}
@@ -663,156 +500,6 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
-
-      {/* Bus Reports Slide-out Overlay */}
-      {showBusReports && (
-        <BusReportsSlide 
-          reports={busReports} 
-          stats={busStatData} 
-          onClose={closeBusReports} 
-        />
-      )}
-    </div>
-  )
-}
-
-const BusReportsSlide = ({ reports, stats, onClose }) => {
-  return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(10px)',
-      zIndex: 2000, display: 'flex', justifyContent: 'flex-end',
-      animation: 'fade-in 0.3s ease'
-    }}>
-      <div className="animate-slide-in-right" style={{
-        width: '100%', maxWidth: '900px', height: '100%',
-        background: 'var(--background)', padding: '2.5rem',
-        overflowY: 'auto', borderLeft: '1px solid var(--border)',
-        boxShadow: '-10px 0 50px rgba(0,0,0,0.2)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ width: 56, height: 56, background: 'rgba(37, 99, 235, 0.1)', color: 'var(--primary)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Bus size={32} />
-            </div>
-            <div>
-              <h2 style={{ fontSize: '1.75rem', fontWeight: 900, margin: 0 }}>Terminal Bus Monitoring</h2>
-              <p style={{ color: 'var(--text-light)', margin: 0 }}>Comprehensive condition overview & safety logs</p>
-            </div>
-          </div>
-          <button 
-            onClick={onClose}
-            style={{ width: 44, height: 44, borderRadius: '50%', background: '#F1F5F9', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <X size={24} />
-          </button>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
-          <div className="card" style={{ background: 'white', border: '1.5px solid #E2E8F0', padding: '1.5rem' }}>
-             <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Active Fleet</p>
-             <h3 style={{ fontSize: '2rem', fontWeight: 900 }}>{stats.total}</h3>
-          </div>
-          <div className="card" style={{ background: '#F0FDF4', border: '1.5px solid #BBF7D0', padding: '1.5rem' }}>
-             <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Operational</p>
-             <h3 style={{ fontSize: '2rem', fontWeight: 900, color: '#166534' }}>{stats.good}</h3>
-          </div>
-          <div className="card" style={{ background: '#FEF2F2', border: '1.5px solid #FECACA', padding: '1.5rem' }}>
-             <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#991B1B', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Alerts</p>
-             <h3 style={{ fontSize: '2rem', fontWeight: 900, color: '#DC2626' }}>{stats.bad}</h3>
-          </div>
-        </div>
-
-        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-           <Calendar size={20} color="var(--primary)" /> Recent Logs
-        </h3>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {reports.map((report, idx) => (
-            <div key={idx} className="card hover-lift" style={{ 
-              padding: '1.75rem', 
-              background: report.condition === 'bad' ? 'linear-gradient(to right, #FFF5F5, white)' : 'white',
-              border: '1.5px solid var(--border)' 
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                   <div style={{ padding: '0.5rem 1rem', background: '#F1F5F9', borderRadius: '10px', fontSize: '0.875rem', fontWeight: 800 }}>
-                      BUS: {report.bus_number}
-                   </div>
-                   <div style={{ 
-                      padding: '0.4rem 1rem', borderRadius: '30px', fontSize: '0.75rem', fontWeight: 800,
-                      background: report.condition === 'bad' ? '#EF4444' : '#10B981', color: 'white'
-                   }}>
-                      {report.condition.toUpperCase()}
-                   </div>
-                </div>
-                <span style={{ fontSize: '0.875rem', color: '#94A3B8', fontWeight: 600 }}>
-                  {new Date(report.created_at).toLocaleString()}
-                </span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem', background: '#F8FAFC', padding: '1rem', borderRadius: '12px' }}>
-                <div>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', display: 'block', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Bus Number</span>
-                  <span style={{ fontWeight: 700, color: '#1E293B' }}>{report.bus_number}</span>
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', display: 'block', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Current Route</span>
-                  <span style={{ fontWeight: 700, color: '#1E293B' }}>{report.route || 'Not Specified'}</span>
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', display: 'block', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Reported Location</span>
-                  <span style={{ fontWeight: 700, color: '#1E293B' }}>{report.current_location || 'Not Specified'}</span>
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', display: 'block', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Condition</span>
-                  <span style={{ fontWeight: 700, color: report.condition === 'good' ? '#10B981' : '#EF4444', textTransform: 'capitalize' }}>{report.condition}</span>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#475569', margin:0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <AlertCircle size={16} /> Technical Observations
-                </h4>
-                <button 
-                  onClick={() => {
-                    if(window.confirm('Delete this report permanently?')) {
-                      operationsService.deleteBusReport(report._id).then(() => {
-                        fetchAdminData();
-                      });
-                    }
-                  }}
-                  className="btn"
-                  style={{ padding: '0.4rem 0.75rem', fontSize: '0.7rem', color: 'var(--error)', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}
-                >
-                  <Trash2 size={14} /> Delete Report
-                </button>
-              </div>
-              <p style={{ fontSize: '1rem', color: '#334155', fontWeight: 500, lineHeight: 1.6, marginBottom: '1.25rem', background: '#F1F5F9', padding: '1.25rem', borderRadius: '12px' }}>
-                {report.issue_description || 'No detailed issues reported.'}
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                 <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <UserCircle size={16} color="#475569" />
-                 </div>
-                 <span style={{ fontSize: '0.875rem', color: '#64748B', fontWeight: 600 }}>Submitted by Driver #{report.driver_id.substring(0, 8)}</span>
-              </div>
-            </div>
-          ))}
-          {reports.length === 0 && (
-            <div style={{ padding: '4rem', textAlign: 'center' }}>
-              <Bus size={64} style={{ opacity: 0.1, marginBottom: '1rem' }} />
-              <p style={{ color: 'var(--text-light)', fontWeight: 600 }}>No reports available for the current period.</p>
-            </div>
-          )}
-        </div>
-      </div>
-      <style>{`
-        @keyframes slide-in-right {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-        .animate-slide-in-right { animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-      `}</style>
     </div>
   )
 }
