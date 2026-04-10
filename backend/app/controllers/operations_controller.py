@@ -3,6 +3,7 @@ from app.database import get_db
 from bson import ObjectId
 from datetime import datetime
 from typing import Optional
+from app.controllers.notification_controller import create_notification
 
 
 def _s(doc):
@@ -218,10 +219,11 @@ async def submit_bus_report(data: dict) -> dict:
     data["_id"] = str(result.inserted_id)
     
     # 2. Update the bus status in the 'buses' collection
-    status = "active" if data.get("condition") == "good" else "maintenance"
+    status = "operational" if data.get("condition") == "good" else "under_maintenance"
     await db["buses"].update_one(
         {"bus_number": data.get("bus_number")},
-        {"$set": {"status": status, "updated_at": datetime.utcnow()}}
+        {"$set": {"status": status, "updated_at": datetime.utcnow()}},
+        upsert=True
     )
 
     # 3. If condition is 'bad', auto-create a system complaint for the admin
@@ -246,6 +248,17 @@ async def submit_bus_report(data: dict) -> dict:
             "is_auto_generated": True
         }
         await db["complaints"].insert_one(new_complaint)
+
+        # 4. Notify all admins about the new fleet issue
+        admins = db["users"].find({"role": "admin"})
+        async for admin in admins:
+            await create_notification(
+                user_id=str(admin["_id"]),
+                title="🚨 Fleet Alert: " + data.get("bus_number"),
+                message=f"Driver has reported a condition issue with Bus {data.get('bus_number')}. A maintenance complaint has been created automatically.",
+                type="status_change",
+                link="/admin/dashboard?view=bus-reports"
+            )
     
     return data
 
