@@ -236,7 +236,7 @@ async def submit_bus_report(data: dict) -> dict:
             "title": f"BUS MAINTENANCE: {data.get('bus_number')}",
             "description": f"DRIVER REPORT: {data.get('issue_description')}\nReport ID: {data['_id']}",
             "location": f"Bus {data.get('bus_number')}",
-            "category": "transportation",
+            "category": "transport",
             "priority": "high",
             "student_id": driver_id,
             "student_name": driver.get("name") if driver else "Driver",
@@ -270,19 +270,23 @@ async def get_bus_reports(bus_number: Optional[str] = None) -> list:
         query["bus_number"] = bus_number
     
     # We want to join with users to get the driver names
+    # Using a safer approach that doesn't crash on invalid ObjectId strings
     pipeline = [
         {"$match": query},
         {"$sort": {"created_at": -1}},
         {
-            "$addFields": {
-                "driver_object_id": {"$toObjectId": "$driver_id"}
-            }
-        },
-        {
             "$lookup": {
                 "from": "users",
-                "localField": "driver_object_id",
-                "foreignField": "_id",
+                "let": {"d_id": "$driver_id"},
+                "pipeline": [
+                    {
+                        "$match": {
+                            "$expr": {
+                                "$eq": [{"$toString": "$_id"}, "$$d_id"]
+                            }
+                        }
+                    }
+                ],
                 "as": "driver_info"
             }
         },
@@ -297,7 +301,7 @@ async def get_bus_reports(bus_number: Optional[str] = None) -> list:
                 "driver_name": "$driver_info.name"
             }
         },
-        {"$project": {"driver_info": 0, "driver_object_id": 0}}
+        {"$project": {"driver_info": 0}}
     ]
     
     cursor = db["bus_reports"].aggregate(pipeline)
