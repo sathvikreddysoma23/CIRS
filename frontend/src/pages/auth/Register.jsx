@@ -38,6 +38,8 @@ const Register = () => {
         submissionData.secret_key = ""
       } else if (submissionData.role === 'admin') {
         submissionData.department = ""
+      } else if (submissionData.role === 'driver') {
+        submissionData.department = ""
       }
 
       await register(submissionData)
@@ -144,6 +146,7 @@ const Register = () => {
               {[
                 { label: 'Student', val: 'student' },
                 { label: 'Staff', val: 'department' },
+                { label: 'Driver', val: 'driver' },
                 { label: 'Admin', val: 'admin' }
               ].map((r) => (
                 <button

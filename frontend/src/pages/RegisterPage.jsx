@@ -25,7 +25,8 @@ const RegisterPage = () => {
       [name]: value,
       // Reset sensitive fields if switching roles
       ...(name === 'role' && value === 'student' ? { secret_key: '', department: '' } : {}),
-      ...(name === 'role' && value === 'admin' ? { department: '' } : {})
+      ...(name === 'role' && value === 'admin' ? { department: '' } : {}),
+      ...(name === 'role' && value === 'driver' ? { department: '' } : {})
     }))
   }
 
@@ -154,6 +155,7 @@ const RegisterPage = () => {
                   style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '0.875rem', backgroundColor: '#fff', outline: 'none' }}>
                   <option value="student">Student</option>
                   <option value="department">Staff/Faculty</option>
+                  <option value="driver">Bus Driver</option>
                   <option value="admin">Administrator</option>
                 </select>
              </div>
@@ -186,6 +188,14 @@ const RegisterPage = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#475569', marginLeft: '0.25rem' }}>Staff Verification Key</label>
               <input name="secret_key" type="password" placeholder="Enter staff secret key" required value={formData.secret_key} onChange={handleInputChange} 
+                style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+            </div>
+          )}
+
+          {formData.role === 'driver' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#475569', marginLeft: '0.25rem' }}>Driver Verification Key</label>
+              <input name="secret_key" type="password" placeholder="Enter driver secret key" required value={formData.secret_key} onChange={handleInputChange} 
                 style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
             </div>
           )}

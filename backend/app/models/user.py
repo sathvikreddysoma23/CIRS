@@ -21,6 +21,7 @@ class UserRole(str, Enum):
     student = "student"
     admin = "admin"
     department = "department"
+    driver = "driver"
 
 
 class UserBase(BaseModel):

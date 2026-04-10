@@ -23,6 +23,7 @@ const Welcome = () => {
     if (!loading && user) {
       if (user.role === 'admin') navigate('/admin')
       else if (user.role === 'department') navigate('/staff')
+      else if (user.role === 'driver') navigate('/driver')
       else navigate('/student')
     }
   }, [user, loading, navigate])

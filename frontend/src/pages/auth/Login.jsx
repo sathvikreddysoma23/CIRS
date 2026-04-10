@@ -16,6 +16,7 @@ const Login = () => {
     if (!authLoading && user) {
       if (user.role === 'admin') navigate('/admin')
       else if (user.role === 'department') navigate('/staff')
+      else if (user.role === 'driver') navigate('/driver')
       else navigate('/student')
     }
   }, [user, authLoading, navigate])
@@ -28,6 +29,7 @@ const Login = () => {
       const user = await login(email, password)
       if (user.role === 'admin') navigate('/admin')
       else if (user.role === 'department') navigate('/staff')
+      else if (user.role === 'driver') navigate('/driver')
       else navigate('/student')
     } catch (err) {
       setError(err.response?.data?.detail || 'Invalid email or password')

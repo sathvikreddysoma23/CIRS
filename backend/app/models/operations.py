@@ -175,3 +175,36 @@ class MedicineInDB(MedicineBase):
 
     class Config:
         populate_by_name = True
+
+
+# ─────────────────────────────────────────────
+# BUS REPORTS (DRIVER FEEDBACK)
+# ─────────────────────────────────────────────
+
+class BusCondition(str, Enum):
+    good = "good"
+    bad = "bad"
+
+
+class BusReportBase(BaseModel):
+    bus_number: str
+    driver_id: str
+    condition: BusCondition
+    issue_description: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        use_enum_values = True
+
+
+class BusReportCreate(BaseModel):
+    bus_number: str
+    condition: BusCondition
+    issue_description: Optional[str] = None
+
+
+class BusReportInDB(BusReportBase):
+    id: Optional[str] = Field(default=None, alias="_id")
+
+    class Config:
+        populate_by_name = True

@@ -10,6 +10,7 @@ import PublicRoute from './PublicRoute'
 import StudentDashboard from '../pages/student/StudentDashboard'
 import StaffDashboard from '../pages/staff/StaffDashboard'
 import AdminDashboard from '../pages/admin/AdminDashboard'
+import DriverDashboard from '../pages/driver/DriverDashboard'
 
 // Student Pages
 import RaiseIssue from '../pages/student/RaiseIssue'
@@ -78,6 +79,13 @@ const AppRoutes = () => {
       <Route path="/staff/update/:id" element={
         <ProtectedRoute role="department">
           <UpdateIssue />
+        </ProtectedRoute>
+      } />
+
+      {/* Driver Routes */}
+      <Route path="/driver" element={
+        <ProtectedRoute role="driver">
+          <DriverDashboard />
         </ProtectedRoute>
       } />
 

@@ -205,3 +205,22 @@ async def delete_medicine(medicine_id: str) -> dict:
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Medicine not found.")
     return {"message": "Medicine record removed."}
+
+
+# ─── BUS REPORTS ───────────────────────────────────────────────────
+
+async def submit_bus_report(data: dict) -> dict:
+    db = get_db()
+    data["created_at"] = datetime.utcnow()
+    result = await db["bus_reports"].insert_one(data)
+    data["_id"] = str(result.inserted_id)
+    return data
+
+
+async def get_bus_reports(bus_number: Optional[str] = None) -> list:
+    db = get_db()
+    query = {}
+    if bus_number:
+        query["bus_number"] = bus_number
+    cursor = db["bus_reports"].find(query).sort("created_at", -1)
+    return [_s(doc) async for doc in cursor]

@@ -9,6 +9,7 @@ from app.models.operations import (
     BuildingCleanlinessCreate,
     DoctorCreate, DoctorUpdate,
     MedicineCreate, MedicineUpdate,
+    BusReportCreate,
 )
 
 router = APIRouter(prefix="/operations", tags=["Operations"])
@@ -147,3 +148,19 @@ async def update_medicine(med_id: str, body: MedicineUpdate, _=Depends(require_a
 @router.delete("/healthcare/medicines/{med_id}", summary="Remove medicine record")
 async def delete_medicine(med_id: str, _=Depends(require_admin_or_department)):
     return await ops.delete_medicine(med_id)
+
+
+# ═══════════════════════════════════════════
+# BUS REPORTS
+# ═══════════════════════════════════════════
+
+@router.post("/buses/report", summary="Submit a bus condition report")
+async def submit_bus_report(body: BusReportCreate, current_user: dict = Depends(get_current_active_user)):
+    data = body.model_dump()
+    data["driver_id"] = current_user["sub"]
+    return await ops.submit_bus_report(data)
+
+
+@router.get("/buses/reports", summary="Get all bus reports")
+async def list_bus_reports(bus_number: Optional[str] = Query(None), _=Depends(get_current_active_user)):
+    return await ops.get_bus_reports(bus_number)
