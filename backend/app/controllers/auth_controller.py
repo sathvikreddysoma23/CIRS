@@ -121,3 +121,23 @@ async def update_user_profile(user_id: str, update_data: dict) -> dict:
     update_data = {k: v for k, v in update_data.items() if v is not None}
     await db["users"].update_one({"_id": ObjectId(user_id)}, {"$set": update_data})
     return await get_user_profile(user_id)
+
+
+async def change_password(user_id: str, old_password: str, new_password: str) -> dict:
+    db = get_db()
+    user = await db["users"].find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    if not verify_password(old_password, user["hashed_password"]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect old password.",
+        )
+
+    hashed = hash_password(new_password)
+    await db["users"].update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"hashed_password": hashed, "updated_at": datetime.utcnow()}}
+    )
+    return {"message": "Password changed successfully."}

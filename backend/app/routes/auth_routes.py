@@ -22,6 +22,11 @@ class ProfileUpdate(BaseModel):
     department: str = None
 
 
+class PasswordChange(BaseModel):
+    old_password: str
+    new_password: str
+
+
 @router.post("/register", summary="Register a new user")
 async def register(body: UserCreate):
     return await auth_controller.register_user(body)
@@ -45,3 +50,8 @@ async def get_me(current_user: dict = Depends(get_current_active_user)):
 @router.put("/me", summary="Update current user profile")
 async def update_me(body: ProfileUpdate, current_user: dict = Depends(get_current_active_user)):
     return await auth_controller.update_user_profile(current_user["sub"], body.model_dump())
+
+
+@router.post("/change-password", summary="Change password for current user")
+async def change_password(body: PasswordChange, current_user: dict = Depends(get_current_active_user)):
+    return await auth_controller.change_password(current_user["sub"], body.old_password, body.new_password)

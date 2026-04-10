@@ -11,7 +11,8 @@ import {
   UserCircle,
   Building2,
   ClipboardList,
-  ExternalLink
+  ExternalLink,
+  Settings
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
@@ -114,7 +115,26 @@ const Sidebar = () => {
       </nav>
 
       {/* Settings & Logout */}
-      <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ padding: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <NavLink
+          to="/profile"
+          style={({ isActive }) => ({
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            padding: '0.75rem 1rem',
+            borderRadius: '8px',
+            color: isActive ? 'white' : '#9CA3AF',
+            background: isActive ? '#2563EB' : 'transparent',
+            transition: 'var(--transition)',
+            textDecoration: 'none',
+            fontWeight: isActive ? 600 : 500,
+            fontSize: '0.875rem'
+          })}
+        >
+          <Settings size={18} /> Settings
+        </NavLink>
+        
         <button
            onClick={logout}
            style={{
@@ -129,7 +149,8 @@ const Sidebar = () => {
              fontWeight: 500,
              cursor: 'pointer',
              width: '100%',
-             textAlign: 'left'
+             textAlign: 'left',
+             marginTop: '0.25rem'
            }}
            onMouseOver={(e) => e.currentTarget.style.color = 'white'}
            onMouseOut={(e) => e.currentTarget.style.color = '#9CA3AF'}

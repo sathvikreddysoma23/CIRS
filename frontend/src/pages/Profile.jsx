@@ -11,9 +11,13 @@ import {
   Settings,
   Bell,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  EyeOff,
+  X
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { authService } from '../services/api'
 
 const Profile = () => {
   const { user, logout } = useAuth()
@@ -25,6 +29,17 @@ const Profile = () => {
   })
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
+  
+  // Password Change State
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
+  const [showPass, setShowPass] = useState(false)
+  const [passLoading, setPassLoading] = useState(false)
+  const [passError, setPassError] = useState('')
 
   const handleUpdate = (e) => {
     e.preventDefault()
@@ -33,6 +48,33 @@ const Profile = () => {
       setLoading(false)
       setIsEditing(false)
     }, 1500)
+  }
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault()
+    setPassError('')
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPassError('New passwords do not match')
+      return
+    }
+    
+    if (passwordData.newPassword.length < 6) {
+      setPassError('Password must be at least 6 characters')
+      return
+    }
+
+    setPassLoading(true)
+    try {
+      await authService.changePassword(passwordData.oldPassword, passwordData.newPassword)
+      alert('Password updated successfully!')
+      setShowPasswordModal(false)
+      setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' })
+    } catch (err) {
+      setPassError(err.response?.data?.detail || 'Failed to change password')
+    } finally {
+      setPassLoading(false)
+    }
   }
 
   return (
@@ -210,7 +252,12 @@ const Profile = () => {
                   <h4 style={{ fontWeight: 700, fontSize: '0.925rem' }}>Account Password</h4>
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Change your password to keep your account secure.</p>
                 </div>
-                <button className="btn btn-secondary"><Lock size={16} /> Update</button>
+                <button 
+                  onClick={() => setShowPasswordModal(true)}
+                  className="btn btn-secondary"
+                >
+                  <Lock size={16} /> Update
+                </button>
              </div>
              
              <div style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid var(--warning)', padding: '1rem', borderRadius: 'var(--radius)', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
@@ -223,6 +270,112 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Password Change Modal */}
+      {showPasswordModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000,
+          padding: '1.5rem'
+        }}>
+          <div className="card animate-in zoom-in duration-300" style={{ maxWidth: 400, width: '100%', padding: '2.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)', margin: 0 }}>Update Password</h3>
+              <button 
+                onClick={() => setShowPasswordModal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)' }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {passError && (
+              <div style={{ padding: '0.75rem', background: '#FEF2F2', color: 'var(--error)', borderRadius: '10px', fontSize: '0.875rem', marginBottom: '1.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <AlertCircle size={18} /> {passError}
+              </div>
+            )}
+
+            <form onSubmit={handlePasswordChange}>
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label>Current Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showPass ? "text" : "password"}
+                    required
+                    style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }}
+                    value={passwordData.oldPassword}
+                    onChange={(e) => setPasswordData({...passwordData, oldPassword: e.target.value})}
+                  />
+                  <Lock size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }} />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label>New Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showPass ? "text" : "password"}
+                    required
+                    style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }}
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                  />
+                  <Lock size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }} />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '2rem' }}>
+                <label>Confirm New Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showPass ? "text" : "password"}
+                    required
+                    style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }}
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                  />
+                  <Lock size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }} />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)' }}
+                  >
+                    {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ flex: 1, justifyContent: 'center' }}
+                  onClick={() => setShowPasswordModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary" 
+                  style={{ flex: 1, justifyContent: 'center' }}
+                  disabled={passLoading}
+                >
+                  {passLoading ? 'Updating...' : 'Save Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
