@@ -19,16 +19,18 @@ import { useAuth } from '../context/AuthContext'
 import { authService } from '../services/api'
 
 const Profile = () => {
-  const { user, logout } = useAuth()
+  const { user, logout, updateUser } = useAuth()
   const [formData, setFormData] = useState({
-    name: user?.name || 'User Name',
-    email: user?.email || 'user@univ.edu',
-    department: user?.department || 'General',
-    role: user?.role || 'student'
+    name: user?.name || '',
+    department: user?.department || '',
+    phone: user?.phone || '',
+    email: user?.email || '',
+    role: user?.role || ''
   })
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
-  
+  const [error, setError] = useState('')
+
   // Password Change State
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [passwordData, setPasswordData] = useState({
@@ -40,13 +42,24 @@ const Profile = () => {
   const [passLoading, setPassLoading] = useState(false)
   const [passError, setPassError] = useState('')
 
-  const handleUpdate = (e) => {
+  const handleUpdate = async (e) => {
     e.preventDefault()
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
+    setError('')
+    try {
+      const response = await authService.updateProfile({
+        name: formData.name,
+        department: formData.department,
+        phone: formData.phone
+      })
+      updateUser(response.data)
       setIsEditing(false)
-    }, 1500)
+      alert('Profile updated successfully!')
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to update profile')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handlePasswordChange = async (e) => {
@@ -195,6 +208,26 @@ const Profile = () => {
                     value={formData.role}
                   />
                   <Shield size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                </div>
+              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+              <div>
+                <label>Phone Number</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="text" 
+                    disabled={!isEditing}
+                    style={{ 
+                      paddingLeft: '3rem', 
+                      backgroundColor: !isEditing ? '#F3F4F6' : 'white',
+                      cursor: !isEditing ? 'not-allowed' : 'text',
+                      color: !isEditing ? '#6B7280' : '#111827'
+                    }}
+                    placeholder="Enter phone number"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  />
+                  <Settings size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
                 </div>
               </div>
               {formData.role === 'department' && (

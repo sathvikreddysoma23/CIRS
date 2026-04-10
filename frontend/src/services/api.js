@@ -42,6 +42,7 @@ export const authService = {
   login: (email, password) => API.post('/auth/login', { email, password }),
   register: (data) => API.post('/auth/register', data),
   getMe: () => API.get('/auth/me'),
+  updateProfile: (data) => API.put('/auth/me', data),
   changePassword: (old_password, new_password) => API.post('/auth/change-password', { old_password, new_password }),
 }
 
