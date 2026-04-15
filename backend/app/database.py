@@ -12,7 +12,13 @@ async def connect_db():
     """Connect to MongoDB Atlas using Motor async driver."""
     global client, db
     try:
-        client = AsyncIOMotorClient(settings.MONGO_URI)
+        client = AsyncIOMotorClient(
+            settings.MONGO_URI,
+            minPoolSize=10,
+            maxPoolSize=100,
+            retryWrites=True,
+            serverSelectionTimeoutMS=5000
+        )
         db = client[settings.DATABASE_NAME]
         # Verify connection
         await client.admin.command("ping")

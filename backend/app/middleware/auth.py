@@ -22,16 +22,44 @@ async def get_current_user(
     return payload   # { sub: user_id, role: ..., email: ... }
 
 
+import time
+from typing import Dict, Tuple
+
+# Simple in-memory cache to store user active status and avoid redundant DB hits
+# Format: { user_id: (is_active, timestamp) }
+USER_STATUS_CACHE: Dict[str, Tuple[bool, float]] = {}
+CACHE_TTL_SECONDS = 60
+
+
 async def get_current_active_user(
     current_user: dict = Depends(get_current_user),
 ):
     """Ensure the authenticated user still exists and is active."""
+    user_id = current_user["sub"]
+    now = time.time()
+
+    # Check cache first
+    if user_id in USER_STATUS_CACHE:
+        is_active, timestamp = USER_STATUS_CACHE[user_id]
+        if now - timestamp < CACHE_TTL_SECONDS:
+            if not is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="User account is inactive.",
+                )
+            return current_user
+
+    # Cache miss or expired - hit the DB
     db = get_db()
-    user = await db["users"].find_one({"_id": ObjectId(current_user["sub"])})
-    if not user or not user.get("is_active", True):
+    user = await db["users"].find_one({"_id": ObjectId(user_id)})
+    
+    is_active = bool(user and user.get("is_active", True))
+    USER_STATUS_CACHE[user_id] = (is_active, now)
+
+    if not user or not is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"User account is inactive or not found. ID: {current_user['sub']}",
+            detail=f"User account is inactive or not found. ID: {user_id}",
         )
     return current_user
 

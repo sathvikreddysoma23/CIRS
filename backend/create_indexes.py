@@ -24,7 +24,7 @@ async def create_indexes():
     client = AsyncIOMotorClient(MONGO_URI)
     db = client[DATABASE_NAME]
 
-    print(f"\n📑 Creating indexes on '{DATABASE_NAME}'...")
+    print(f"\nCreating indexes on '{DATABASE_NAME}'...")
 
     # ── Users ──────────────────────────────────────────────────────
     await db["users"].create_indexes([
@@ -32,7 +32,7 @@ async def create_indexes():
         IndexModel([("role", ASCENDING)]),
         IndexModel([("is_active", ASCENDING)]),
     ])
-    print("  ✅ users: email (unique), role, is_active")
+    print("  OK: users: email (unique), role, is_active")
 
     # ── Complaints ─────────────────────────────────────────────────
     await db["complaints"].create_indexes([
@@ -44,43 +44,43 @@ async def create_indexes():
         IndexModel([("created_at", DESCENDING)]),
         IndexModel([("title", TEXT), ("description", TEXT)]),   # full-text search
     ])
-    print("  ✅ complaints: student_id, status, category, priority, assigned_to, created_at, text-search")
+    print("  OK: complaints: student_id, status, category, priority, assigned_to, created_at, text-search")
 
     # ── Buses ──────────────────────────────────────────────────────
     await db["buses"].create_indexes([
         IndexModel([("bus_number", ASCENDING)], unique=True),
         IndexModel([("status", ASCENDING)]),
     ])
-    print("  ✅ buses: bus_number (unique), status")
+    print("  OK: buses: bus_number (unique), status")
 
     # ── Doctors ────────────────────────────────────────────────────
     await db["doctors"].create_indexes([
         IndexModel([("availability", ASCENDING)]),
     ])
-    print("  ✅ doctors: availability")
+    print("  OK: doctors: availability")
 
     # ── Medicines ──────────────────────────────────────────────────
     await db["medicines"].create_indexes([
         IndexModel([("is_low_stock", ASCENDING)]),
         IndexModel([("expiry_date", ASCENDING)]),
     ])
-    print("  ✅ medicines: is_low_stock, expiry_date")
+    print("  OK: medicines: is_low_stock, expiry_date")
 
     # ── Buildings ──────────────────────────────────────────────────
     await db["buildings"].create_indexes([
         IndexModel([("status", ASCENDING)]),
         IndexModel([("building_name", ASCENDING)]),
     ])
-    print("  ✅ buildings: status, building_name")
+    print("  OK: buildings: status, building_name")
 
     # ── Housekeeping Staff ─────────────────────────────────────────
     await db["housekeeping_staff"].create_indexes([
         IndexModel([("assigned_building", ASCENDING)]),
         IndexModel([("employee_id", ASCENDING)], unique=True),
     ])
-    print("  ✅ housekeeping_staff: assigned_building, employee_id (unique)")
+    print("  OK: housekeeping_staff: assigned_building, employee_id (unique)")
 
-    print("\n✅ All indexes created successfully!\n")
+    print("\nAll indexes created successfully!\n")
     client.close()
 
 
