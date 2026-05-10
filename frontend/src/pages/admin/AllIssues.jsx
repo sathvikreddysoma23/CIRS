@@ -75,14 +75,27 @@ const AllIssues = () => {
     fetchStaff()
   }, [])
 
+  const getMappedDepartment = (category) => {
+    const cat = category?.toLowerCase() || '';
+    if (cat === 'housing' || cat === 'sanitation') return 'housekeeping';
+    if (cat === 'transportation') return 'transport';
+    return cat;
+  }
+
   const handleOpenAssign = (issue) => {
     setSelectedIssue(issue)
-    // Pre-select current staff or first staff of same dept
+    // Pre-select current staff or AI-recommended staff of same dept
     if (issue.assigned_to) {
       setSelectedStaffId(issue.assigned_to._id || issue.assigned_to)
     } else {
-      const sameDeptStaff = staff.find(s => s.department?.toLowerCase() === issue.category?.toLowerCase())
-      setSelectedStaffId(sameDeptStaff ? sameDeptStaff._id : (staff[0]?._id || ''))
+      const mappedDept = getMappedDepartment(issue.category);
+      // AI Recommendation logic: Find staff matching the mapped department
+      const recommendedStaff = staff.filter(s => {
+        const dept = s.department?.toLowerCase() || '';
+        return dept === mappedDept || dept === issue.category?.toLowerCase() || dept.includes(mappedDept);
+      });
+      
+      setSelectedStaffId(recommendedStaff.length > 0 ? recommendedStaff[0]._id : (staff[0]?._id || ''))
     }
     setShowAssignModal(true)
   }
@@ -544,11 +557,22 @@ const AllIssues = () => {
               >
                 <option value="">-- Choose Staff --</option>
                 {staff.length > 0 ? (
-                  staff.map(s => (
-                    <option key={s._id} value={s._id}>
-                      {s.name} ({s.department || 'No Dept'})
-                    </option>
-                  ))
+                  [...staff].sort((a, b) => {
+                    const mappedDept = getMappedDepartment(selectedIssue.category);
+                    const isARec = a.department?.toLowerCase() === mappedDept || a.department?.toLowerCase() === selectedIssue.category?.toLowerCase() || a.department?.toLowerCase().includes(mappedDept);
+                    const isBRec = b.department?.toLowerCase() === mappedDept || b.department?.toLowerCase() === selectedIssue.category?.toLowerCase() || b.department?.toLowerCase().includes(mappedDept);
+                    return (isARec === isBRec) ? 0 : isARec ? -1 : 1;
+                  }).map(s => {
+                    const mappedDept = getMappedDepartment(selectedIssue.category);
+                    const isRecommended = s.department?.toLowerCase() === mappedDept || 
+                                          s.department?.toLowerCase() === selectedIssue.category?.toLowerCase() ||
+                                          s.department?.toLowerCase().includes(mappedDept);
+                    return (
+                      <option key={s._id} value={s._id}>
+                        {s.name} ({s.department || 'No Dept'}) {isRecommended ? '✨ AI Recommended' : ''}
+                      </option>
+                    )
+                  })
                 ) : (
                   <option value="">No staff accounts found</option>
                 )}
