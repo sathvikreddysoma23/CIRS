@@ -71,6 +71,8 @@ class ComplaintInDB(ComplaintBase):
     ai_category: Optional[str] = None          # NLP predicted category
     ai_priority: Optional[str] = None          # NLP predicted priority
     ai_confidence: Optional[float] = None
+    is_duplicate: bool = False
+    duplicate_of: Optional[str] = None
     status_history: List[StatusUpdate] = []
     resolution_note: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)

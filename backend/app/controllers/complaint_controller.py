@@ -3,7 +3,7 @@ from app.database import get_db
 from app.models.complaint import ComplaintCreate, ComplaintUpdate, StatusUpdate, ComplaintStatus
 from app.utils.file_upload import upload_image
 from app.utils.email_sender import send_complaint_submitted_email, send_status_update_email, send_assignment_email
-from app.ai.classifier import classify_complaint
+from app.ai.classifier import classify_complaint, calculate_similarity
 from app.controllers.notification_controller import create_notification
 from bson import ObjectId
 from datetime import datetime
@@ -43,6 +43,59 @@ async def create_complaint(
          # If AI is confident enough, it takes precedence for better routing accuracy
          final_category = ai_cat
 
+    # 1. AI Duplicate Detection
+    is_duplicate = False
+    duplicate_of = None
+    
+    # Only check recent unresolved issues in the same category
+    recent_issues_cursor = db["complaints"].find({
+        "category": final_category,
+        "status": {"$in": [ComplaintStatus.pending, ComplaintStatus.assigned, ComplaintStatus.in_progress]},
+        "is_duplicate": False  # Don't chain duplicates
+    }).sort("created_at", -1).limit(20)
+    
+    async for existing in recent_issues_cursor:
+        sim = calculate_similarity(
+            f"{complaint_data.title} {complaint_data.description}",
+            f"{existing.get('title', '')} {existing.get('description', '')}"
+        )
+        if sim > 0.55:  # 55% semantic similarity threshold
+            is_duplicate = True
+            duplicate_of = str(existing["_id"])
+            break
+
+    # 2. Automatic Staff Assignment (if not a duplicate)
+    assigned_to = None
+    assigned_dept = None
+    initial_status = ComplaintStatus.pending
+    
+    if not is_duplicate:
+        # Find active staff in this category
+        staff_cursor = db["users"].find({
+            "role": "department",
+            "department": final_category,
+            "is_active": True
+        })
+        staff_members = [doc async for doc in staff_cursor]
+        
+        if staff_members:
+            # Simple load balancing: Assign to the staff member with the fewest active complaints
+            staff_workloads = []
+            for staff in staff_members:
+                count = await db["complaints"].count_documents({
+                    "assigned_to": str(staff["_id"]),
+                    "status": {"$in": [ComplaintStatus.assigned, ComplaintStatus.in_progress]}
+                })
+                staff_workloads.append((count, staff))
+            
+            # Sort by count ascending, pick the least loaded
+            staff_workloads.sort(key=lambda x: x[0])
+            chosen_staff = staff_workloads[0][1]
+            
+            assigned_to = str(chosen_staff["_id"])
+            assigned_dept = chosen_staff.get("department")
+            initial_status = ComplaintStatus.assigned
+
     new_complaint = {
         "title": complaint_data.title,
         "description": complaint_data.description,
@@ -51,18 +104,28 @@ async def create_complaint(
         "priority": complaint_data.priority, # Manual priority still kept, AI priority is stored separately
         "student_id": current_user["sub"],
         "student_name": current_user["name"],
-        "status": ComplaintStatus.pending,
+        "status": initial_status,
         "image_urls": image_urls,
         "ai_category": ai_cat,
         "ai_priority": ai_result.get("priority"),
         "ai_confidence": ai_conf,
-        "assigned_to": None,
-        "assigned_department": None,
+        "is_duplicate": is_duplicate,
+        "duplicate_of": duplicate_of,
+        "assigned_to": assigned_to,
+        "assigned_department": assigned_dept,
         "status_history": [],
         "resolution_note": None,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
     }
+    
+    if assigned_to:
+        new_complaint["status_history"].append({
+            "status": ComplaintStatus.assigned,
+            "note": f"Auto-assigned to {chosen_staff['name']} based on availability.",
+            "updated_by": "system",
+            "updated_at": datetime.utcnow()
+        })
 
 
     result = await db["complaints"].insert_one(new_complaint)
@@ -114,6 +177,10 @@ async def get_complaints(
         query["category"] = category
     if priority:
         query["priority"] = priority
+
+    # Admins and Staff shouldn't see duplicates in their main list
+    if current_user["role"] in ["admin", "department"]:
+        query["is_duplicate"] = {"$ne": True}
 
     skip = (page - 1) * limit
     total = await db["complaints"].count_documents(query)

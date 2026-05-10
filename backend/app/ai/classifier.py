@@ -170,3 +170,10 @@ def classify_complaint(title: str, description: str) -> dict:
     if result:
         return result
     return rule_based_classify(title, description)
+
+def calculate_similarity(text1: str, text2: str) -> float:
+    """Calculate semantic similarity between two texts for duplicate detection."""
+    t1 = _preprocess(text1)
+    t2 = _preprocess(text2)
+    return __import__('difflib').SequenceMatcher(None, t1, t2).ratio()
+
