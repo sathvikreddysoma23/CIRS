@@ -62,6 +62,26 @@ async def login_user(email: str, password: str) -> dict:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password.",
         )
+        
+    # Check if the hash needs updating (e.g., to use fewer rounds for faster login)
+    from app.utils.password import pwd_context, hash_password
+    needs_update = pwd_context.needs_update(user["hashed_password"])
+    
+    # Force downgrade if rounds are too high for our low-spec environment
+    if not needs_update and user["hashed_password"].startswith("$pbkdf2-sha256$"):
+        try:
+            rounds = int(user["hashed_password"].split("$")[2])
+            if rounds > 10000:
+                needs_update = True
+        except Exception:
+            pass
+
+    if needs_update:
+        new_hash = hash_password(password)
+        await db["users"].update_one(
+            {"_id": user["_id"]},
+            {"$set": {"hashed_password": new_hash}}
+        )
     if not user.get("is_active", True):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
