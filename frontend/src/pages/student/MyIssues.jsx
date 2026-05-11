@@ -87,8 +87,8 @@ const MyIssues = () => {
   }
 
   const filteredIssues = issues.filter(issue => {
-    const matchesSearch = issue.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          issue.category.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = (issue.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+                          (issue.category?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     return matchesSearch
   })
 

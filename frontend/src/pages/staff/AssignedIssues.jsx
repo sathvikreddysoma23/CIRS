@@ -47,9 +47,9 @@ const AssignedIssues = () => {
   }, [filter])
 
   const filteredIssues = issues.filter(issue => {
-    const matchesSearch = issue.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          issue.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          issue._id.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = (issue.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+                          (issue.student_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                          (issue._id?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     return matchesSearch
   })
 
