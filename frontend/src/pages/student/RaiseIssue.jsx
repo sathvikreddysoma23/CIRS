@@ -37,11 +37,28 @@ const RaiseIssue = () => {
       return
     }
     
-    setImages([...images, ...files])
+    const validFiles = []
+    let hasLargeFile = false
+    files.forEach(file => {
+      if (file.size > 10 * 1024 * 1024) {
+        hasLargeFile = true
+      } else {
+        validFiles.push(file)
+      }
+    })
+
+    if (hasLargeFile) {
+      setError('One or more files exceed the 10MB limit and were skipped.')
+    } else {
+      setError('')
+    }
+
+    if (validFiles.length === 0) return
     
-    const newPreviews = files.map(file => URL.createObjectURL(file))
+    setImages([...images, ...validFiles])
+    
+    const newPreviews = validFiles.map(file => URL.createObjectURL(file))
     setPreviews([...previews, ...newPreviews])
-    setError('')
   }
 
   const removeImage = (index) => {
@@ -231,7 +248,7 @@ const RaiseIssue = () => {
               />
               <ImageIcon size={32} className="upload-icon" />
               <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#4B5563', marginBottom: '0.25rem' }}>Click to upload images</p>
-              <p style={{ fontSize: '0.8125rem', color: '#9CA3AF' }}>PNG, JPG or WEBP up to 5MB</p>
+              <p style={{ fontSize: '0.8125rem', color: '#9CA3AF' }}>PNG, JPG or WEBP up to 10MB</p>
             </div>
 
             {previews.length > 0 && (

@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status, UploadFile
+import asyncio
 from app.database import get_db
 from app.models.complaint import ComplaintCreate, ComplaintUpdate, StatusUpdate, ComplaintStatus
 from app.utils.file_upload import upload_image
@@ -135,20 +136,20 @@ async def create_complaint(
     try:
         user = await db["users"].find_one({"_id": ObjectId(current_user["sub"])})
         if user and user.get("email"):
-            await send_complaint_submitted_email(
+            asyncio.create_task(send_complaint_submitted_email(
                 user["email"], user["name"], complaint_data.title, str(result.inserted_id)
-            )
+            ))
     except Exception:
         pass
 
     # Create notification
-    await create_notification(
+    asyncio.create_task(create_notification(
         user_id=current_user["sub"],
         title="Issue Submitted",
         message=f"Your issue '{complaint_data.title}' has been received and is now PENDING review.",
         type="status_change",
         link=f"/student/issue/{new_complaint['_id']}"
-    )
+    ))
 
     return new_complaint
 
@@ -257,19 +258,19 @@ async def assign_complaint(complaint_id: str, department_user_id: str, current_u
     )
 
     # Create notification
-    await create_notification(
+    asyncio.create_task(create_notification(
         user_id=complaint["student_id"],
         title="Issue Assigned",
         message=f"Your issue '{complaint['title']}' has been assigned to {dept_user['name']} ({dept_user.get('department', 'N/A')}).",
         type="assignment",
         link=f"/student/issue/{complaint_id}"
-    )
+    ))
 
     # Notify department
     try:
-        await send_assignment_email(
+        asyncio.create_task(send_assignment_email(
             dept_user["email"], dept_user["name"], complaint["title"], complaint_id
-        )
+        ))
     except Exception:
         pass
 
@@ -312,21 +313,21 @@ async def update_complaint_status(
     try:
         student = await db["users"].find_one({"_id": ObjectId(complaint["student_id"])})
         if student:
-            await send_status_update_email(
+            asyncio.create_task(send_status_update_email(
                 student["email"], student["name"], complaint["title"], new_status, note
-            )
+            ))
     except Exception:
         pass
 
     # Create notification
     status_text = new_status.replace('_', ' ').capitalize()
-    await create_notification(
+    asyncio.create_task(create_notification(
         user_id=complaint["student_id"],
         title=f"Issue {status_text}",
         message=f"Your issue '{complaint['title']}' status has been updated to {status_text}. Note: {note}",
         type="status_change",
         link=f"/student/issue/{complaint_id}"
-    )
+    ))
 
     updated = await db["complaints"].find_one({"_id": ObjectId(complaint_id)})
     return _serialize(updated)
